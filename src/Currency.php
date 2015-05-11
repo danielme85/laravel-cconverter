@@ -35,7 +35,7 @@ use Illuminate\Support\Facades\Log;
  */
 class Currency {
     
-    private $https, $key, $url, $cache, $timestamp;
+    private $https, $key, $url, $cache, $timestamp, $requestUrl;
     
     
     public function __construct($https = null, $useCache = null) {
@@ -82,10 +82,11 @@ class Currency {
         }
         
         $url = $baseUrl . $this->url . '?app_id=' . $this->key .'&base='.$baseCurrency;      
+        $this->requestUrl = $url;
         
         if ($this->cache) {
             if (Cache::get('currencyRates')) {
-                $response = Cache::get('currencyRates');              
+                $result = Cache::get('currencyRates');              
                 if (Config::get('CConverter.cc-enable-log')) {
                     Log::debug('Got currency rates from cache.');
                 }
@@ -98,16 +99,18 @@ class Currency {
                     Log::debug('Added new currency rates to cache.');
                 }
             }
-            $this->timestamp = $response['timestamp'];
-            return $response;      
+            $result = $response->json();             
         }    
         
         else {
             $client = new Client();
-            $response = $client->get($url);
-            $this->timestamp = $response['timestamp'];
-            return $response->json();
+            $response = $client->get($url);           
+            $result = $response->json();
+            
         }
+        
+        $this->timestamp = $result['timestamp'];
+        return $result;
                     
     }
     
@@ -132,6 +135,10 @@ class Currency {
         
         return $result;
                
+    }
+    
+    public function meta() {
+        $meta = ['cache' => $this->cache, 'datestamp' => $this->timestamp, 'url' => $this->requestUrl];
     }
 
 }

@@ -4,7 +4,7 @@ A simple currency converter plugin for Laravel 5. Uses: http://openexchangerates
 ##Innstalation
 require in composer.json 
 ```
-"danielme85/CConverter": "dev-master"
+"danielme85/laravel-cconverter": "dev-master"
 ```
 
 And like always slap a line in your config\app.php under Service Providers
@@ -31,6 +31,11 @@ $decimals = 2;
 $currency = new Currency();
 $valueNOK = $currency->convert('USD', 'NOK', $valueUSD, $decimals);
 
+```
+
+You can get additional information in the Currency object, like datestamp of last currency data update. 
+```
+$info = $currency->meta();
 ```
 
 Uses http://en.wikipedia.org/wiki/ISO_4217 codes.
