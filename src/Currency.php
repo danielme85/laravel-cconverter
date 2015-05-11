@@ -135,7 +135,6 @@ class Currency {
         else {
             $rates = $this->getRates($from);
             $this->rates = $rates;
-            d($this->rates);
         }
         
        
