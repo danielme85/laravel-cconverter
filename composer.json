@@ -1,5 +1,5 @@
 {
-    "name": "danielme85/CConverter",
+    "name": "danielme85/laravel-cconverter",
     "description": "Laravel 5 plug-in for openexchangerates.org",
     "require": {
         "laravel/framework": "5.*",
@@ -9,7 +9,7 @@
     "authors": [
         {
             "name": "Daniel Mellum",
-            "email": "daniel.mellum@interdesignusa.com"
+            "email": "mellum@gmail.com"
         }
     ],
     "autoload": {

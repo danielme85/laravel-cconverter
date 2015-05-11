@@ -17,7 +17,7 @@ You need to public the config file with the artisan command:
 php artisan vendor:publish
 ```
 
-Checkout the new config\CConverter.php file, you need to set a app key from http://openexchangerates.org.
+Check the new config\CConverter.php file, you need to set a app key from http://openexchangerates.org.
 Cache is enabled per default to 60min, as the data source is only updated once an hour (at least the free version).
 
 ##Usage
@@ -34,3 +34,5 @@ $valueNOK = $currency->convert('USD', 'NOK', $valueUSD, $decimals);
 ```
 
 Uses http://en.wikipedia.org/wiki/ISO_4217 codes.
+
+Made in a hurry, feel free to improve :)
