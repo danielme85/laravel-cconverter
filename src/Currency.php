@@ -85,8 +85,8 @@ class Currency {
         $this->requestUrl = $url;
         
         if ($this->cache) {
-            if (Cache::get('currencyRates')) {
-                $result = Cache::get('currencyRates'); 
+            if (Cache::get("CConverter-$base")) {
+                $result = Cache::get("CConverter-$base"); 
                 
                 if (Config::get('CConverter.cc-enable-log')) {
                     Log::debug('Got currency rates from cache.');
@@ -95,7 +95,7 @@ class Currency {
             else {
                 $client = new Client();
                 $response = $client->get($url);
-                Cache::add('currencyRates', $response->json(), 60);
+                Cache::add("CConverter-$base", $response->json(), 60);
                 $result = $response->json();
                 
                 if (Config::get('CConverter.cc-enable-log')) {
@@ -135,6 +135,7 @@ class Currency {
         else {
             $rates = $this->getRates($from);
             $this->rates = $rates;
+            d($this->rates);
         }
         
        
