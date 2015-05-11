@@ -35,7 +35,7 @@ use Illuminate\Support\Facades\Log;
  */
 class Currency {
     
-    private $https, $key, $url, $cache, $timestamp, $requestUrl;
+    private $https, $key, $url, $cache, $timestamp, $requestUrl, $rates;
     
     
     public function __construct($https = null, $useCache = null) {
@@ -129,7 +129,14 @@ class Currency {
      * @return float $result
      */
     public function convert($from = null, $to, $int, $round = null) {
-        $rates = $this->getRates($from);
+        if ($this->rates['base'] == $from) {
+            $rates = $this->rates;
+        }
+        else {
+            $rates = $this->getRates($from);
+            $this->rates = $rates;
+        }
+        
        
         $result = $int * (float)$rates['rates'][$to];   
         

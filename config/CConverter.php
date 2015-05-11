@@ -38,5 +38,5 @@ return array (
     'cc-enable-cache' => true,
     
     //use Laravel logging
-    'cc-enable-log' => true
+    'cc-enable-log' => false
 );
