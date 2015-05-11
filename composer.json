@@ -1,5 +1,5 @@
 {
-    "name": "danielme85/c-converter",
+    "name": "danielme85/CConverter",
     "description": "Laravel 5 plug-in for openexchangerates.org",
     "require": {
         "laravel/framework": "5.*",

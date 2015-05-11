@@ -40,21 +40,21 @@ class Currency {
     
     public function __construct($https = null, $useCache = null) {
         
-        $this->key = Config::get('c-converter.cc-app-id');
+        $this->key = Config::get('CConverter.cc-app-id');
         $this->url = '://openexchangerates.org/api/latest.json';
         
         if ($https) {
             $this->https = $https;
         }
         else {
-           $this->https = Config::get('c-converter.cc-use-https'); 
+           $this->https = Config::get('CConverter.cc-use-https'); 
         }
         
         if ($useCache) {
             $this->cache = $useCache;
         }
         else {
-          $this->cache = Config::get('c-converter.cc-enable-cache');  
+          $this->cache = Config::get('CConverter.cc-enable-cache');  
         }
     }
     
@@ -78,7 +78,7 @@ class Currency {
             $baseCurrency = $base;
         }
         else {
-            $baseCurrency = Config::get('c-converter.cc-base-currency');
+            $baseCurrency = Config::get('CConverter.cc-base-currency');
         }
         
         $url = $baseUrl . $this->url . '?app_id=' . $this->key .'&base='.$baseCurrency;      
@@ -86,7 +86,7 @@ class Currency {
         if ($this->cache) {
             if (Cache::get('currencyRates')) {
                 $response = Cache::get('currencyRates');              
-                if (Config::get('c-converter.cc-enable-log')) {
+                if (Config::get('CConverter.cc-enable-log')) {
                     Log::debug('Got currency rates from cache.');
                 }
             }
@@ -94,7 +94,7 @@ class Currency {
                 $client = new Client();
                 $response = $client->get($url);
                 Cache::add('currencyRates', $response->json(), 60);
-                if (Config::get('c-converter.cc-enable-log')) {
+                if (Config::get('CConverter.cc-enable-log')) {
                     Log::debug('Added new currency rates to cache.');
                 }
             }
@@ -112,7 +112,14 @@ class Currency {
     }
     
     /*
+     * Convert a from one currecnty to antoher
      * 
+     * @param string $from ISO4217 country code
+     * @param string $to ISO4217 country code 
+     * @param mixed $int calculate from this number
+     * @param integer $round round this this number of desimals.
+     * 
+     * @return float $result
      */
     public function convert($from = null, $to, $int, $round = null) {
         $rates = $this->getRates($from);

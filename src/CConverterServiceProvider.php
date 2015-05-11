@@ -34,8 +34,8 @@ class CConverterServiceProvider extends ServiceProvider {
 	 */
 	public function boot()
 	{
-            $configPath = __DIR__ . '/../config/c-converter.php';
-            $this->publishes([$configPath => config_path('c-converter.php')]);
+            $configPath = __DIR__ . '/../config/CConverter.php';
+            $this->publishes([$configPath => config_path('CConverter.php')]);
 	}
 
 	/**
@@ -45,8 +45,8 @@ class CConverterServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-            $configPath = __DIR__ . '/../config/c-converter.php';
-            $this->mergeConfigFrom($configPath, 'c-converter');
+            $configPath = __DIR__ . '/../config/CConverter.php';
+            $this->mergeConfigFrom($configPath, 'CConverter');
             
             $this->app->bind('Currency', function()
             {
