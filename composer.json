@@ -1,0 +1,20 @@
+{
+    "name": "danielme85/c-converter",
+    "description": "Laravel 5 plug-in for openexchangerates.org",
+    "require": {
+        "laravel/framework": "5.*",
+        "guzzlehttp/guzzle": "~5.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Daniel Mellum",
+            "email": "daniel.mellum@interdesignusa.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "danielme85\\CConverter\\": "src"
+        }
+    }
+}
