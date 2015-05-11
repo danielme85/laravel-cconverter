@@ -86,7 +86,8 @@ class Currency {
         
         if ($this->cache) {
             if (Cache::get('currencyRates')) {
-                $result = Cache::get('currencyRates');              
+                $result = Cache::get('currencyRates'); 
+                
                 if (Config::get('CConverter.cc-enable-log')) {
                     Log::debug('Got currency rates from cache.');
                 }
@@ -95,11 +96,14 @@ class Currency {
                 $client = new Client();
                 $response = $client->get($url);
                 Cache::add('currencyRates', $response->json(), 60);
+                $result = $response->json();
+                
                 if (Config::get('CConverter.cc-enable-log')) {
                     Log::debug('Added new currency rates to cache.');
                 }
+                
             }
-            $result = $response->json();             
+                         
         }    
         
         else {
@@ -138,8 +142,7 @@ class Currency {
     }
     
     public function meta() {
-        $meta = ['cache' => $this->cache, 'datestamp' => $this->timestamp, 'url' => $this->requestUrl];
+        return ['cache' => $this->cache, 'datestamp' => $this->timestamp, 'url' => $this->requestUrl];     
     }
 
 }
-
