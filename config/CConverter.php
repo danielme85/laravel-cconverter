@@ -25,18 +25,42 @@
  */
 
 return array (
-    //Your app id from openexchangerates.org
-    'cc-app-id' => '',
     
-    //use https? the free version of the openexchangerates.org does not support https :(
-    'cc-use-https' => false,
+    //API source. 
+    //Possible values: 'openexchange' | 'yahoo'
+    'api-source' => 'yahoo',
     
-    //The default base currency
-    'cc-base-currency' => 'USD',
+    //Your app id from openexchangerates.org.
+    'openex-app-id' => '',    
     
+    //use https? Supported by Yahoo and non-free version of openExchange.
+    'use-ssl' => true,
+    
+    //When using the free account we can still calculate other currencies based on USD as a base thanks to some basic math.
+    //enable this if you want real base values insted of calculated ones. Requires enterprice account from openexchangerates.org
+    'openex-use-real-base' => false,
+
     //use Laravel cache engine to cache the results.
-    'cc-enable-cache' => true,
+    'enable-cache' => false,
     
-    //use Laravel logging
-    'cc-enable-log' => false
+    //minutes cache should expire.
+    'cache-min' => 60,
+    
+    //use Laravel logging.
+    'enable-log' => false,
+    
+    //enabled currencies (only in use for yahoo)
+    //add/remove as needed. 
+    'yahoo-currencies' => array (
+        'AED', 'AFN', 'ALL', 'AMD', 'ANG', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN', 'BAM', 'BBD', 'BDT', 'BGN', 'BHD', 'BIF', 'BMD', 
+        'BND', 'BOB', 'BRL', 'BSD', 'BTC', 'BTN', 'BWP', 'BYR', 'BZD', 'CAD', 'CDF', 'CHF', 'CLF', 'CLP', 'CNY', 'COP', 'CRC', 
+        'CUC', 'CUP', 'CVE', 'CZK', 'DJF', 'DKK', 'DOP', 'DZD', 'EEK', 'EGP', 'ERN', 'ETB', 'EUR', 'FJD', 'FKP', 'GBP', 'GEL', 
+        'GGP', 'GHS', 'GIP', 'GMD', 'GNF', 'GTQ', 'GYD', 'HKD', 'HNL', 'HRK', 'HTG', 'HUF', 'IDR', 'ILS', 'IMP', 'INR', 'IQD', 
+        'IRR', 'ISK', 'JEP', 'JMD', 'JOD', 'JPY', 'KES', 'KGS', 'KHR', 'KMF', 'KPW', 'KRW', 'KWD', 'KYD', 'KZT', 'LAK', 'LBP', 
+        'LKR', 'LRD', 'LSL', 'LTL', 'LVL', 'LYD', 'MAD', 'MDL', 'MGA', 'MKD', 'MMK', 'MNT', 'MOP', 'MRO', 'MTL', 'MUR', 'MVR', 
+        'MWK', 'MXN', 'MYR', 'MZN', 'NAD', 'NGN', 'NIO', 'NOK', 'NPR', 'NZD', 'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR', 'PLN', 
+        'PYG', 'QAR', 'RON', 'RSD', 'RUB', 'RWF', 'SAR', 'SBD', 'SCR', 'SDG', 'SEK', 'SGD', 'SHP', 'SLL', 'SOS', 'SRD', 'STD', 
+        'SVC', 'SYP', 'SZL', 'THB', 'TJS', 'TMT', 'TND', 'TOP', 'TRY', 'TTD', 'TWD', 'TZS', 'UAH', 'UGX', 'USD', 'UYU', 'UZS', 
+        'VEF', 'VND', 'VUV', 'WST', 'XAF', 'XAG', 'XAU', 'XCD', 'XDR', 'XOF', 'XPF', 'YER', 'ZAR', 'ZMK', 'ZMW', 'ZWL'
+    )
 );
