@@ -27,26 +27,29 @@
 return array (
     
     //API source. 
-    //Possible values: 'openexchange' | 'yahoo'
+    //Possible values: 'openexchange' | 'yahoo' | 'jsonrates'
     'api-source' => 'yahoo',
     
-    //Your app id from openexchangerates.org.
-    'openex-app-id' => '',    
+    //Your app id from openexchangerates.org
+    'openex-app-id' => '',
     
-    //use https? Supported by Yahoo and non-free version of openExchange.
-    'use-ssl' => true,
+    //Your app id from jsonrates.com
+    'jsonrates-app-id' => '',
+    
+    //use https? the free version of openexchange and jsonrates does not support https :(
+    'use-ssl' => false,
     
     //When using the free account we can still calculate other currencies based on USD as a base thanks to some basic math.
     //enable this if you want real base values insted of calculated ones. Requires enterprice account from openexchangerates.org
     'openex-use-real-base' => false,
 
     //use Laravel cache engine to cache the results.
-    'enable-cache' => false,
+    'enable-cache' => true,
     
     //minutes cache should expire.
     'cache-min' => 60,
     
-    //use Laravel logging.
+    //use Laravel logging
     'enable-log' => false,
     
     //enabled currencies (only in use for yahoo)

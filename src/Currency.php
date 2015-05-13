@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Log;
 
 class Currency {
     
-    private $settings, $timestamp, $requestUrl, $base, $rates, $fromCache;
+    private $settings, $requestUrl, $base, $rates, $fromCache, $date;
     
     
     /*
@@ -59,9 +59,9 @@ class Currency {
         }       
     }
     
-    protected function openExchange() {
-        
+    protected function openExchange() {      
         $base = $this->base;
+        $date = $this->date;
         
         if ($this->settings['use-ssl']) {
             $url = 'https';
@@ -70,17 +70,42 @@ class Currency {
             $url = 'http';
         }
  
-        $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] .'&base='.$base;        
+        if (isset($date)) {
+            $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] .'&start='.$date.'&end='.$date.'&base='.$base;
+        }
+        else {
+            $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] .'&base='.$base;        
+        }
+               
         $this->requestUrl = $url;
            
         $client = new Client();
         $response = $client->get($url);      
            
-        return $response->json();      
+        return $this->convertFromOpenExchange($response->json());      
     }
     
-    
-    private function yahoo() {
+    protected function jsonRates() {
+        $base = $this->base;
+        $date = $this->date;
+
+        if (isset($date)) {
+            $url = 'http://jsonrates.com/historical/?apiKey='.$this->settings['jsonrates-app-id'].'&date='.$date.'&base='.$base;
+        }
+        else {
+            $url = 'http://jsonrates.com/get/?apiKey='.$this->settings['jsonrates-app-id'].'&base='.$base;
+        }
+                
+        $this->requestUrl = $url;
+           
+        $client = new Client();
+        $response = $client->get($url);      
+           
+        return $this->convertFromJsonRates($response->json());        
+    }
+
+
+    protected function yahoo() {
         
         $base = $this->base;
         
@@ -110,10 +135,11 @@ class Currency {
      * Get the current rates.
      * 
      * @param string $base the Currency base (will override config if set)
+     * @param string $date for historical data. 
      * 
      * @return object returns a GuzzleHttp\Client object. 
      */
-    public function getRates($base = null) {
+    public function getRates($base = null, $date = null) {
         
         //if there is no base spesified it will default to USD. 
         //Also for the free OpenExchange account there is no support for change of base currency.
@@ -124,14 +150,16 @@ class Currency {
         else {
             $this->base = $base;
         }
+        
+        $this->date = $date;
                             
         if ($this->settings['enable-cache']) {
             $api = $this->settings['api-source'];
-            if (Cache::has("CConverter$api$base")) {
-                $result = Cache::get("CConverter$api$base"); 
+            if (Cache::has("CConverter$api$base$date")) {
+                $result = Cache::get("CConverter$api$base$date"); 
                 $this->fromCache = true;
                 if (Config::get('CConverter.enable-log')) {
-                    Log::debug("Got currency rates from cache: CConverter$api$base");
+                    Log::debug("Got currency rates from cache: CConverter$api$base$date");
                 }
             } 
             else {
@@ -141,12 +169,16 @@ class Currency {
                 else if ($api === 'openexchange') {
                     $result = $this->openExchange($base);
                 }
+                
+                else if ($api === 'jsonrates') {
+                    $result = $this->jsonRates($base);
+                }
 
-                Cache::add("CConverter$api$base", $result, $this->settings['cache-min']);
+                Cache::add("CConverter$api$base$date", $result, $this->settings['cache-min']);
                 $this->fromCache = false;
                 
                 if (Config::get('CConverter.enable-log')) {
-                    Log::debug('Added new currency rates to cache: CConverter'.$api.$base.' - for '.$this->settings['cache-min'].' min.');
+                    Log::debug('Added new currency rates to cache: CConverter'.$api.$base.$date.' - for '.$this->settings['cache-min'].' min.');
                 }              
             }                       
         }
@@ -157,10 +189,13 @@ class Currency {
             else if ($api === 'openexchange') {
                 $result = $this->openExchange($base);
             }
+            else if ($api === 'jsonrates') {
+                $result = $this->jsonRates($base);
+            }
+            
             $this->fromCache = false;
         }
         
-        $this->timestamp = $result['timestamp'];
         return $result;                             
     }
     
@@ -171,10 +206,11 @@ class Currency {
      * @param string $to ISO4217 country code 
      * @param mixed $int calculate from this number
      * @param integer $round round this this number of desimals.
+     * @param string $date date for historical data
      * 
      * @return float $result
      */
-    public function convert($from = null, $to, $int, $round = null) {     
+    public function convert($from = null, $to, $int, $round = null, $date = null) {     
         if ($int === 0 or $int === null or $int === '') {
             return 0;
         }
@@ -189,24 +225,24 @@ class Currency {
         }
         
         //Check if base currency is allready loaded in the model
-        if ($this->base == $base) {
+        if ($this->base === $base and $this->date === $date) {
             $rates = $this->rates;
         }
         //If not get the needed rates
         else {                             
-            $rates = $this->getRates($from);
+            $rates = $this->getRates($from, $date);
             $this->rates = $rates;
         }
         
         
-        //A special case for openExchange free version.
-        if ($from === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
-            $result = $int / (float)$rates['rates'][$from];
+        //A special case for openExchange.
+        if ($from === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {                     
+            $result = $int * (float)$rates['rates'][$to];                             
         }
         
-        //A special case for openExchange free version.
-        else if ($to === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
-            $result = $int / (float)$rates['rates'][$from];
+        //A special case for openExchange.
+        else if ($to === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {          
+            $result = $int / (float)$rates['rates'][$from];                    
         }
         
         //When using openExchange free version we can still calculate other currencies trough USD.
@@ -219,7 +255,7 @@ class Currency {
         
          //Use actual base currency to calculate.
         else {
-            $result = $int * (float)$rates['rates'][$to];
+            $result = $int * (float)$rates['rates'][$to];                         
         }
                  
         if ($round) {
@@ -231,11 +267,11 @@ class Currency {
     }
     
     public function meta() {
-        return ['settings' =>$this->settings, 
-                'timestamp' => $this->timestamp, 
+        return ['settings' =>$this->settings,  
                 'url' => $this->requestUrl, 
                 'base' => $this->base, 
-                'fromCache' => $this->fromCache];     
+                'fromCache' => $this->fromCache,
+                'historicalDate' => $this->date];     
     }
     
     
@@ -251,5 +287,47 @@ class Currency {
         }
         return $output;
     }
-
+    
+    protected function convertFromJsonRates($data) {
+        $date = $this->date;
+        
+        $output = array();
+        $output['base'] = $data['base'];
+              
+        if (isset($date)) {
+            $output['timestamp'] = strtotime($data['rates'][$date]['utctime']);
+            foreach ($data['rates'][$date] as $key => $row) {      
+                $output['rates'][$key] = (float)$row;
+            }           
+        }
+        else {
+            $output['timestamp'] = strtotime($data['utctime']);          
+            foreach ($data['rates'] as $key => $row) {      
+                $output['rates'][$key] = (float)$row;
+            }         
+        }      
+        
+        return $output;
+    }
+    
+    protected function convertFromOpenExchange($data) {
+        $date = $this->date;       
+        $output = array();
+          
+        if (isset($date)) {
+            
+            foreach ($data['rates'][$date] as $key => $row) {      
+                $output['rates'][$key] = (float)$row;
+                $output['timestamp'] = strtotime($date);
+            }           
+        }
+        else {            
+            $output['rates'] = $data['rates'];
+            $output['timestamp'] = $data['timestamp'];
+        }      
+        
+        $output['base'] = $data['base'];
+        
+        return $output;
+    }
 }
