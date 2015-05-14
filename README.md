@@ -36,32 +36,39 @@ When doing multiple conversion at the same time from the same currency the base 
 
 ##Usage
 
-```
+```php
 use danielme85\CConverter\Currency;
 
 
 $currency = new Currency();
 
-//to convert a value
+//To convert a value
+$valueNOK = $currency->convert($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2);
+
+//To convert a value based on historical data
 $valueNOK = $currency->convert($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2, $date = '2014-12-24');
 
-//When doing multiple convertions with the same from/base rate this will be loaded from the model instance. 
+//Use the same model instance for multiple conversion for the best performance. 
 $values = array (many many values).
 foreach ($values as $value) {
-    $valueNOK = $currency->convert($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2, $date = '2014-12-24');
+    $valueNOK = $currency->convert($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2);
 }
 
 //to get an array of all the rates associated to a base currency.
 $rates = $currency->getRates(); //defaults to USD
 
 $rates = $currency->getRates('NOK');
+
+//Get the historical rates
+$rates = $currency->getRates('NOK', '2014-12-24');
 ```
 
-You can get additional information on the Currency object, like datestamp of last currency data update.
-More information is provided in the array returned from the getRates() function.
-```
+Information about the current Currency object is provided by the meta() function.
+```php
 $info = $currency->meta();
 ```
+
+Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.org/wiki/ISO_4217
 
 ####Supported functions per API
 | API               | HTTPS         | Historical | Custom base currency |
@@ -70,7 +77,14 @@ $info = $currency->meta();
 | OpenExchangeRates | non-free      | non-free   |  non-free            |
 | Yahoo Finance     | true          | false      |  true                |
 
-Uses http://en.wikipedia.org/wiki/ISO_4217 codes.
 
-Made in a hurry, feel free to improve :)
--dan-
+##Disclaimer
+Please take note of the Terms of Use for the different data sources.
+https://policies.yahoo.com/us/en/yahoo/terms/product-atos/yql/index.htm
+http://jsonrates.com/terms/
+https://openexchangerates.org/terms
+
+This code is released per the MIT open source license: http://opensource.org/licenses/MIT
+The actual rates and conversion will vary between the data sources. 
+In addition I am no math professor, so you should probably not use this for super serious multi-billion dollar investments. 
+If you are gonna spend your hard earned billion dollars on the money market, you should probably use something like this: http://www.forex.com/forex.html 
