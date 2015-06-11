@@ -103,6 +103,18 @@ class Currency {
            
         return $this->convertFromJsonRates($response->json());        
     }
+    
+        protected function jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd) {
+ 
+        $url = 'http://jsonrates.com/historical/?apiKey='.$this->settings['jsonrates-app-id'].'&from='.$from.'&to='.$to.'&dateStart='.$dateStart.'&dateEnd='.$dateEnd;
+             
+        $this->requestUrl = $url;
+           
+        $client = new Client();
+        $response = $client->get($url);      
+           
+        return $this->convertFromJsonRatesSeries($response->json());        
+    }
 
 
     protected function yahoo() {
@@ -191,6 +203,68 @@ class Currency {
             }
             else if ($api === 'jsonrates') {
                 $result = $this->jsonRates($base);
+            }
+            
+            $this->fromCache = false;
+        }
+        
+        return $result;                             
+    }
+    
+   /**
+    * Get a RateSeries (not supported by Yahoo)
+    * 
+    * @param type $from
+    * @param type $to
+    * @param type $dateStart
+    * @param type $dateEnd
+    * 
+    *  @return object returns a GuzzleHttp\Client object. 
+    */
+    public function getRateSeries($from, $to, $dateStart, $dateEnd) {
+                                            
+        if ($this->settings['enable-cache']) {
+            
+            $api = $this->settings['api-source'];
+            
+            if (Cache::has("CConverter$from$to$dateStart$dateEnd")) {
+                $result = Cache::get("CConverter$from$to$dateStart$dateEnd"); 
+                $this->fromCache = true;
+                if (Config::get('CConverter.enable-log')) {
+                    Log::debug("Got currency rates from cache: CConverter$from$to$dateStart$dateEnd");
+                }
+            } 
+            else {
+                if ($api === 'yahoo') {
+                    return null;
+                } 
+                else if ($api === 'openexchange') {
+                    return null;
+                    //$result = $this->openExchange($base);
+                }
+                
+                else if ($api === 'jsonrates') {
+                    $result = $this->jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd);
+                }
+
+                Cache::add("CConverter$from$to$dateStart$dateEnd", $result, $this->settings['cache-min']);
+                $this->fromCache = false;
+                
+                if (Config::get('CConverter.enable-log')) {
+                    Log::debug('Added new currency rates to cache: CConverter'.$api.$from.$to.$dateStart.$dateEnd.' - for '.$this->settings['cache-min'].' min.');
+                }              
+            }                       
+        }
+        else {
+            if ($api === 'yahoo') {
+                return null;
+            } 
+            else if ($api === 'openexchange') {
+                return null;
+                //$result = $this->openExchange($base);
+            }
+            else if ($api === 'jsonrates') {
+                $result = $this->jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd);
             }
             
             $this->fromCache = false;
@@ -306,6 +380,20 @@ class Currency {
                 $output['rates'][$key] = (float)$row;
             }         
         }      
+        
+        return $output;
+    }
+    
+    protected function convertFromJsonRatesSeries($data) {      
+        $output = array();
+        
+        $output['to'] = $data['to'];
+        $output['from'] = $data['from'];
+        
+        foreach ($data['rates'] as $key => $row) {
+            $output['rates'][$key]['timestamp'] = strtotime($row['utctime']);
+            $output['rates'][$key]['rate'] = (float)$row['rate'];
+        }                  
         
         return $output;
     }

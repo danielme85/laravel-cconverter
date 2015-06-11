@@ -24,6 +24,11 @@ And like always slap a line in your config\app.php under Service Providers
 'danielme85\CConverter\CConverterServiceProvider'
 ```
 
+If you want a Class alias add the Facade in the same config file under Class Aliases (Currency is used in this example but you can name it whatever you want)
+```
+    'Currency'  => 'danielme85\CConverter\CConverter',
+```
+
 You need to publish the config file with the artisan command:
 ```
 php artisan vendor:publish
@@ -38,6 +43,8 @@ When doing multiple conversion at the same time from the same currency the base 
 
 ```php
 use danielme85\CConverter\Currency;
+// or "use Currency" (if you added the class alias and facade).
+// if you did add the facade you can shorten everything: ex $value = Currency::convert($from, $to, $value, $decimals), $rates = Currency::getRates().
 
 
 $currency = new Currency();
