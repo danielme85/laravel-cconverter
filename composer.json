@@ -4,7 +4,7 @@
     "keywords": ["laravel","laravel-5", "currency", "conversion", "finance"],
     "require": {
         "laravel/framework": "5.*",
-        "guzzlehttp/guzzle": "~5.3"
+        "guzzlehttp/guzzle": "6.*"
     },
     "license": "MIT",
     "authors": [

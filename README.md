@@ -21,14 +21,12 @@ require in composer.json
 
 And like always slap a line in your config\app.php under Service Providers
 ```
-'danielme85\CConverter\CConverterServiceProvider'
-(Laravel 5.1+) 'danielme85\CConverter\CConverterServiceProvider::class'
+danielme85\CConverter\CConverterServiceProvider::class,
 ```
 
 If you want a Class alias add the Facade in the same config file under Class Aliases (Currency is used in this example but you can name it whatever you want)
 ```
-'Currency'  => 'danielme85\CConverter\CConverter',
-(Laravel 5.1+) 'Currency'  => danielme85\CConverter\CConverter::class,
+    'Currency'  => danielme85\CConverter\CConverter::class,
 ```
 
 You need to publish the config file with the artisan command:
