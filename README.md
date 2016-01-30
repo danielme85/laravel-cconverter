@@ -1,6 +1,9 @@
 # CConverter
 A simple currency converter plug-in for Laravel 5. Uses: http://jsonrates.com, http://openexchangerates.org and Yahoo Finance. 
 
+### Version 0.0.3
+* Update to support Guzzle v6 and Laravel 5.2, thanks to @mean-cj
+
 ### Version 0.0.2-beta
 * Fixed a calculation bug when using free account at openExchange.
 * Added support for http://jsonrates.com (register for free to get a API key).
@@ -43,7 +46,7 @@ When doing multiple conversion at the same time from the same currency the base 
 
 ```php
 use danielme85\CConverter\Currency;
-// or "use Currency" (if you added the class alias and facade).
+
 // if you did add the facade you can shorten everything: ex $value = Currency::convert($from, $to, $value, $decimals), $rates = Currency::getRates().
 
 
