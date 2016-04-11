@@ -44,6 +44,9 @@ class Currency {
      */
     public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null) {
         $this->settings = Config::get('CConverter');
+        if (!is_array($this->settings)) {
+            Log::error('The CConverter config file is needed. Did you run: php artisan vendor:publish ?');
+        }
 
         if (isset($api)) {
             $this->settings['api-source'] = $api;
@@ -82,34 +85,43 @@ class Currency {
         $client = new Client();
         $response = $client->get($url);
 
-        return $this->convertFromOpenExchange(json_decode($response->getBody()),true);
+        return $this->convertFromOpenExchange(json_decode($response->getBody(),true));
     }
 
     protected function jsonRates() {
         $base = $this->base;
         $date = $this->date;
 
-        if (isset($date)) {
-            $url = 'http://jsonrates.com/historical/?apiKey='.$this->settings['jsonrates-app-id'].'&date='.$date.'&base='.$base;
+        if ($this->settings['use-ssl']) {
+            $url = 'https';
         }
         else {
-            $url = 'http://jsonrates.com/get/?apiKey='.$this->settings['jsonrates-app-id'].'&base='.$base;
+            $url = 'http';
+        }
+
+        if (isset($date)) {
+            $url .= '://apilayer.net/api/historical/?acces_key='.$this->settings['jsonrates-app-id'].'&date='.$date.'&source='.$base;
+        }
+        else {
+            $url .= '://apilayer.net/api/live/?acces_key='.$this->settings['jsonrates-app-id'].'&source='.$base;
         }
 
         $this->requestUrl = $url;
-
         $client = new Client();
         $response = $client->get($url);
 
         return $this->convertFromJsonRates(json_decode($response->getBody(),true));
     }
 
-        protected function jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd) {
-
-        $url = 'http://jsonrates.com/historical/?apiKey='.$this->settings['jsonrates-app-id'].'&from='.$from.'&to='.$to.'&dateStart='.$dateStart.'&dateEnd='.$dateEnd;
-
+    protected function jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd) {
+        if ($this->settings['use-ssl']) {
+            $url = 'https';
+        }
+        else {
+            $url = 'http';
+        }
+        $url .= '://jsonrates.com/timeframe/?acces_key='.$this->settings['jsonrates-app-id'].'&source='.$from.'&currencies='.$to.'&start_date='.$dateStart.'&end_date='.$dateEnd;
         $this->requestUrl = $url;
-
         $client = new Client();
         $response = $client->get($url);
 
@@ -164,9 +176,9 @@ class Currency {
         }
 
         $this->date = $date;
+        $api = $this->settings['api-source'];
 
         if ($this->settings['enable-cache']) {
-            $api = $this->settings['api-source'];
             if (Cache::has("CConverter$api$base$date")) {
                 $result = Cache::get("CConverter$api$base$date");
                 $this->fromCache = true;
@@ -184,6 +196,7 @@ class Currency {
 
                 else if ($api === 'jsonrates') {
                     $result = $this->jsonRates($base);
+                    d($result);
                 }
 
                 Cache::add("CConverter$api$base$date", $result, $this->settings['cache-min']);
@@ -222,11 +235,8 @@ class Currency {
     *  @return object returns a GuzzleHttp\Client object.
     */
     public function getRateSeries($from, $to, $dateStart, $dateEnd) {
-
+        $api = $this->settings['api-source'];
         if ($this->settings['enable-cache']) {
-
-            $api = $this->settings['api-source'];
-
             if (Cache::has("CConverter$from$to$dateStart$dateEnd")) {
                 $result = Cache::get("CConverter$from$to$dateStart$dateEnd");
                 $this->fromCache = true;
@@ -273,8 +283,8 @@ class Currency {
         return $result;
     }
 
-    /*
-     * Convert a from one currecnty to another
+    /**
+     * Convert a from one currency to another
      *
      * @param string $from ISO4217 country code
      * @param string $to ISO4217 country code
@@ -285,6 +295,8 @@ class Currency {
      * @return float $result
      */
     public function convert($from = null, $to, $int, $round = null, $date = null) {
+        $result = array();
+
         if ($int === 0 or $int === null or $int === '') {
             return 0;
         }
@@ -308,36 +320,67 @@ class Currency {
             $this->rates = $rates;
         }
 
+        if (isset($this->rates['rates'])) {
+            //A special case for openExchange.
+            if ($from === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
+                $result = $int * (float)$rates['rates'][$to];
+            }
 
-        //A special case for openExchange.
-        if ($from === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
-            $result = $int * (float)$rates['rates'][$to];
-        }
+            //A special case for openExchange.
+            else if ($to === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
+                $result = $int / (float)$rates['rates'][$from];
+            }
 
-        //A special case for openExchange.
-        else if ($to === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
-            $result = $int / (float)$rates['rates'][$from];
-        }
+            //When using openExchange free version we can still calculate other currencies trough USD.
+            //Hope this math is right :)
+            else if (!$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange'){
+                $to_usd = (float)$rates['rates'][$to];
+                $from_usd = (float)$rates['rates'][$from];
+                $result =  $to_usd * ($int/$from_usd);
+            }
 
-        //When using openExchange free version we can still calculate other currencies trough USD.
-        //Hope this math is right :)
-        else if (!$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange'){
-            $to_usd = (float)$rates['rates'][$to];
-            $from_usd = (float)$rates['rates'][$from];
-            $result =  $to_usd * ($int/$from_usd);
-        }
+            //Use actual base currency to calculate.
+            else {
+                $result = $int * (float)$rates['rates'][$to];
+            }
 
-         //Use actual base currency to calculate.
-        else {
-            $result = $int * (float)$rates['rates'][$to];
-        }
-
-        if ($round) {
-            $result = round($result, $round);
+            if ($round) {
+                $result = round($result, $round);
+            }
         }
 
         return $result;
 
+    }
+
+
+    /**
+     * Convert a from one currency to another
+     *
+     * @param string $from ISO4217 country code
+     * @param string $to ISO4217 country code
+     * @param mixed $int calculate from this number
+     * @param integer $round round this this number of desimals.
+     * @param string $date date for historical data
+     *
+     * @return float $result
+     */
+    public static function conv($from = null, $to, $int, $round = null, $date = null) {
+        $convert = new self;
+        return $convert->convert($from, $to, $int, $round, $date);
+    }
+
+    /*
+     * Get the current rates.
+     *
+     * @param string $base the Currency base (will override config if set)
+     * @param string $date for historical data.
+     *
+     * @return array
+     */
+    public static function rates($base = null, $date = null) {
+        $rates = new self;
+        return $rates->getRates($base, $date);
     }
 
     public function meta() {
@@ -350,35 +393,52 @@ class Currency {
 
 
     protected function convertFromYahoo($data) {
-
         $base = $this->base;
-
         $output = array();
         $output['base'] = $base;
         $output['timestamp'] = strtotime($data['query']['created']);
-        foreach ($data['query']['results']['rate'] as $row) {
-            $key = str_replace("$base/", '', $row['Name']);
-            $output['rates'][$key] = (float)$row['Ask'];
+        if (isset($data['query']['results']['rate']) and is_array($data['query']['results']['rate'])) {
+            foreach ($data['query']['results']['rate'] as $row) {
+                $key = str_replace("$base/", '', $row['Name']);
+                $output['rates'][$key] = (float)$row['Ask'];
+            }
+            return $output;
         }
-        return $output;
+        else {
+            Log::warning('No results returned from Yahoo.');
+        }
+
     }
 
     protected function convertFromJsonRates($data) {
         $date = $this->date;
-
+        $base = $data['source'];
         $output = array();
-        $output['base'] = $data['base'];
+        $output['base'] = $base;
 
         if (isset($date)) {
-            $output['timestamp'] = strtotime($data['rates'][$date]['utctime']);
-            foreach ($data['rates'][$date] as $key => $row) {
-                $output['rates'][$key] = (float)$row;
+            $output['timestamp'] = $data['rates'][$date]['timestamp'];
+            if (isset($data['rates']) and is_array($data['rates'])) {
+                foreach ($data['rates'][$date] as $key => $row) {
+                    $key = str_replace($base, '', $key);
+                    $output['rates'][$key] = (float)$row;
+                }
             }
+            else {
+                Log::warning('No results returned from JsonRates.');
+            }
+
         }
         else {
-            $output['timestamp'] = strtotime($data['utctime']);
-            foreach ($data['rates'] as $key => $row) {
-                $output['rates'][$key] = (float)$row;
+            $output['timestamp'] = $data['timestamp'];
+            if (isset($data['rates']) and is_array($data['rates'])) {
+                foreach ($data['rates'] as $key => $row) {
+                    $key = str_replace($base, '', $key);
+                    $output['rates'][$key] = (float)$row;
+                }
+            }
+            else {
+                Log::warning('No results returned from JsonRates.');
             }
         }
 
@@ -386,14 +446,22 @@ class Currency {
     }
 
     protected function convertFromJsonRatesSeries($data) {
+        $base = $data['source'];
         $output = array();
+        $output['base'] = $base;
 
-        $output['to'] = $data['to'];
-        $output['from'] = $data['from'];
+        $output['to'] = $data['start_date'];
+        $output['from'] = $data['end_date'];
 
-        foreach ($data['rates'] as $key => $row) {
-            $output['rates'][$key]['timestamp'] = strtotime($row['utctime']);
-            $output['rates'][$key]['rate'] = (float)$row['rate'];
+        if (isset($data['rates']) and is_array($data['rates'])) {
+            foreach ($data['rates'] as $key => $row) {
+                $key = str_replace($base, '', $key);
+                $output['rates'][$key]['timestamp'] = strtotime($row['utctime']);
+                $output['rates'][$key]['rate'] = (float)$row['rate'];
+            }
+        }
+        else {
+            Log::warning('No results returned from JsonRates.');
         }
 
         return $output;
@@ -404,15 +472,24 @@ class Currency {
         $output = array();
 
         if (isset($date)) {
-
-            foreach ($data['rates'][$date] as $key => $row) {
-                $output['rates'][$key] = (float)$row;
-                $output['timestamp'] = strtotime($date);
+            if (isset($data['rates'][$date]) and is_array($data['rates'][$date])) {
+                foreach ($data['rates'][$date] as $key => $row) {
+                    $output['rates'][$key] = (float)$row;
+                    $output['timestamp'] = strtotime($date);
+                }
+            }
+            else {
+                Log::warning('No results returned from OpenExchange.');
             }
         }
         else {
-            $output['rates'] = $data['rates'];
-            $output['timestamp'] = $data['timestamp'];
+            if (isset($data['rates']) and is_array($data['rates'])) {
+                $output['rates'] = $data['rates'];
+                $output['timestamp'] = $data['timestamp'];
+            }
+            else {
+                Log::warning('No results returned from OpenExchange.');
+            }
         }
 
         $output['base'] = $data['base'];
