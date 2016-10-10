@@ -92,7 +92,7 @@ Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.
 | Config var               | API               | HTTPS         | Historical | Custom base currency | Sign-up required |
 | ----------------- | ----------------- |:------------: | :--------: | :------------------: | :------------------: |
 |~~jsonrates~~ | ~~JsonRates~~*    | ~~no~~     | ~~yes~~   |  ~~yes~~            | ~~no~~ |
-|openexchange | OpenExchangeRates | non-free      | non-free   |  non-free            | no |
+|openexchange | OpenExchangeRates | non-free      | non-free   |  non-free            | yes |
 |yahoo | Yahoo Finance     | yes          | no      |  yes                | no |
 |jsonrates | CurrencyLayer     | ?             |  ?          |  ?                | yes |
 *JsonRates is discontinued and replaced by: https://currencylayer.com

@@ -196,7 +196,6 @@ class Currency {
 
                 else if ($api === 'jsonrates') {
                     $result = $this->jsonRates($base);
-                    d($result);
                 }
 
                 Cache::add("CConverter$api$base$date", $result, $this->settings['cache-min']);
@@ -344,8 +343,11 @@ class Currency {
                 $result = $int * (float)$rates['rates'][$to];
             }
 
-            if ($round) {
+            if ($round and $round > 0) {
                 $result = round($result, $round);
+            }
+            else if ($round == 0) {
+                $result = round($result);
             }
         }
 
