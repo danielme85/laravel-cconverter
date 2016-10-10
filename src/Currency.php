@@ -287,16 +287,17 @@ class Currency {
      *
      * @param string $from ISO4217 country code
      * @param string $to ISO4217 country code
-     * @param mixed $int calculate from this number
+     * @param mixed $value calculate from this number
      * @param integer $round round this this number of desimals.
      * @param string $date date for historical data
      *
      * @return float $result
      */
-    public function convert($from = null, $to, $int, $round = null, $date = null) {
+    public function convert($from, $to, $value, $round = null, $date = null) {
         $result = array();
 
-        if ($int === 0 or $int === null or $int === '') {
+
+        if ($value === 0 or $value === null or $value === '' or empty($value)) {
             return 0;
         }
 
@@ -322,33 +323,31 @@ class Currency {
         if (isset($this->rates['rates'])) {
             //A special case for openExchange.
             if ($from === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
-                $result = $int * (float)$rates['rates'][$to];
+                $result = $value * $rates['rates'][$to];
             }
 
             //A special case for openExchange.
             else if ($to === 'USD' and !$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
-                $result = $int / (float)$rates['rates'][$from];
+                $result = $value / $rates['rates'][$from];
             }
 
             //When using openExchange free version we can still calculate other currencies trough USD.
             //Hope this math is right :)
             else if (!$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange'){
-                $to_usd = (float)$rates['rates'][$to];
-                $from_usd = (float)$rates['rates'][$from];
-                $result =  $to_usd * ($int/$from_usd);
+                $to_usd = $rates['rates'][$to];
+                $from_usd = $rates['rates'][$from];
+                $result =  $to_usd * ($value/$from_usd);
             }
 
             //Use actual base currency to calculate.
             else {
-                $result = $int * (float)$rates['rates'][$to];
+                $result = $value * $rates['rates'][$to];
             }
 
-            if ($round and $round > 0) {
+            if ($round or $round === 0) {
                 $result = round($result, $round);
             }
-            else if ($round == 0) {
-                $result = round($result);
-            }
+
         }
 
         return $result;
@@ -365,9 +364,9 @@ class Currency {
      * @param integer $round round this this number of desimals.
      * @param string $date date for historical data
      *
-     * @return float $result
+     * @return mixed $result
      */
-    public static function conv($from = null, $to, $int, $round = null, $date = null) {
+    public static function conv($from, $to, $int, $round = null, $date = null) {
         $convert = new self;
         return $convert->convert($from, $to, $int, $round, $date);
     }
@@ -402,7 +401,7 @@ class Currency {
         if (isset($data['query']['results']['rate']) and is_array($data['query']['results']['rate'])) {
             foreach ($data['query']['results']['rate'] as $row) {
                 $key = str_replace("$base/", '', $row['Name']);
-                $output['rates'][$key] = (float)$row['Ask'];
+                $output['rates'][$key] = $row['Ask'];
             }
             return $output;
         }
@@ -423,7 +422,7 @@ class Currency {
             if (isset($data['rates']) and is_array($data['rates'])) {
                 foreach ($data['rates'][$date] as $key => $row) {
                     $key = str_replace($base, '', $key);
-                    $output['rates'][$key] = (float)$row;
+                    $output['rates'][$key] = $row;
                 }
             }
             else {
@@ -436,7 +435,7 @@ class Currency {
             if (isset($data['rates']) and is_array($data['rates'])) {
                 foreach ($data['rates'] as $key => $row) {
                     $key = str_replace($base, '', $key);
-                    $output['rates'][$key] = (float)$row;
+                    $output['rates'][$key] = row;
                 }
             }
             else {
@@ -459,7 +458,7 @@ class Currency {
             foreach ($data['rates'] as $key => $row) {
                 $key = str_replace($base, '', $key);
                 $output['rates'][$key]['timestamp'] = strtotime($row['utctime']);
-                $output['rates'][$key]['rate'] = (float)$row['rate'];
+                $output['rates'][$key]['rate'] = $row['rate'];
             }
         }
         else {
@@ -476,7 +475,7 @@ class Currency {
         if (isset($date)) {
             if (isset($data['rates'][$date]) and is_array($data['rates'][$date])) {
                 foreach ($data['rates'][$date] as $key => $row) {
-                    $output['rates'][$key] = (float)$row;
+                    $output['rates'][$key] = $row;
                     $output['timestamp'] = strtotime($date);
                 }
             }
