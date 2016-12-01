@@ -170,6 +170,10 @@ class Currency {
             $url = 'http';
         }
 
+        if ($to === 'USD') {
+            $to = $from;
+        }
+
         $url .= "://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.historicaldata%20where%20symbol%20%3D%20%22$to%3DX%22%20and%20startDate%20%3D%20%22$dateStart%22%20and%20endDate%20%3D%20%22$dateEnd%22&format=json&diagnostics=false&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&c";
 
         $this->requestUrl = $url;
@@ -455,9 +459,8 @@ class Currency {
         $output['to'] = $this->to;
         $output['fromDate'] =  $this->fromDate;
         $output['toDate'] =  $this->toDate;
-
-
         $output['timestamp'] = strtotime($data['query']['created']);
+
         if (isset($data['query']['results']['quote']) and is_array($data['query']['results']['quote'])) {
             foreach ($data['query']['results']['quote'] as $row) {
                 $key = str_replace('%3dX', '', $row['Symbol']);
@@ -465,14 +468,6 @@ class Currency {
             }
             //Yahoo historical data only supports USD as a base currency
             if ($this->from != 'USD') {
-                /**
-                $to_usd = $rates['rates'][$to];
-                $from_usd = $rates['rates'][$from];
-                $result =  $to_usd * ($value/$from_usd);
-                 */
-
-                //$convertwith = $this->convertFromYahooTimeSeries($this->yahooTimeSeries('USD', $this->base, $this->fromDate, $this->toDate));
-
                 $currencycompare = new self();
                 $convertfrom = $currencycompare->getRateSeries('USD', $this->from, $this->fromDate, $this->toDate);
                 if (!empty($convertfrom['rates'][$this->from]) and !empty($output['rates'][$this->to])) {
