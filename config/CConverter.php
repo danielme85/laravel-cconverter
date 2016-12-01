@@ -37,7 +37,7 @@ return array (
     'jsonrates-app-id' => '',
     
     //use https? the free version of openexchange and jsonrates does not support https :(
-    'use-ssl' => false,
+    'use-ssl' => true,
     
     //When using the free account we can still calculate other currencies based on USD as a base thanks to some basic math.
     //enable this if you want real base values insted of calculated ones. Requires enterprice account from openexchangerates.org

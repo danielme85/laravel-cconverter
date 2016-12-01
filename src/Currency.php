@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Log;
 
 class Currency {
 
-    private $settings, $requestUrl, $base, $rates, $fromCache, $date;
+    private $settings, $requestUrl, $base, $rates, $fromCache, $date, $fromDate, $toDate, $from, $to;
 
 
     /*
@@ -155,6 +155,31 @@ class Currency {
         return $this->convertFromYahoo(json_decode($response->getBody(),true));
     }
 
+
+    protected function yahooTimeSeries($from, $to, $dateStart, $dateEnd) {
+        $this->base = 'USD';
+        $this->from = $from;
+        $this->to = $to;
+        $this->fromDate = $dateStart;
+        $this->toDate = $dateEnd;
+
+        if ($this->settings['use-ssl']) {
+            $url = 'https';
+        }
+        else {
+            $url = 'http';
+        }
+
+        $url .= "://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.historicaldata%20where%20symbol%20%3D%20%22$to%3DX%22%20and%20startDate%20%3D%20%22$dateStart%22%20and%20endDate%20%3D%20%22$dateEnd%22&format=json&diagnostics=false&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&c";
+
+        $this->requestUrl = $url;
+
+        $client = new Client();
+        $response = $client->get($url);
+
+        return $this->convertFromYahooTimeSeries(json_decode($response->getBody(),true));
+    }
+
     /*
      * Get the current rates.
      *
@@ -224,7 +249,7 @@ class Currency {
     }
 
    /**
-    * Get a RateSeries (not supported by Yahoo)
+    * Get a RateSeries (not supported by OpenExchange)
     *
     * @param type $from
     * @param type $to
@@ -245,11 +270,10 @@ class Currency {
             }
             else {
                 if ($api === 'yahoo') {
-                    return null;
+                    $result = $this->yahooTimeSeries($from, $to, $dateStart, $dateEnd);
                 }
                 else if ($api === 'openexchange') {
                     return null;
-                    //$result = $this->openExchange($base);
                 }
 
                 else if ($api === 'jsonrates') {
@@ -266,11 +290,10 @@ class Currency {
         }
         else {
             if ($api === 'yahoo') {
-                return null;
+                $result = $this->yahooTimeSeries($from, $to, $dateStart, $dateEnd);
             }
             else if ($api === 'openexchange') {
                 return null;
-                //$result = $this->openExchange($base);
             }
             else if ($api === 'jsonrates') {
                 $result = $this->jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd);
@@ -310,7 +333,7 @@ class Currency {
             $base = $from;
         }
 
-        //Check if base currency is allready loaded in the model
+        //Check if base currency is already loaded in the model
         if ($this->base === $base and $this->date === $date) {
             $rates = $this->rates;
         }
@@ -371,17 +394,31 @@ class Currency {
         return $convert->convert($from, $to, $int, $round, $date);
     }
 
-    /*
-     * Get the current rates.
+
+    /**
+     * Get rates for given currency an optional date, defaults to USD
      *
-     * @param string $base the Currency base (will override config if set)
-     * @param string $date for historical data.
-     *
+     * @param null $base
+     * @param null $date
      * @return array
      */
     public static function rates($base = null, $date = null) {
         $rates = new self;
         return $rates->getRates($base, $date);
+    }
+
+    /**
+     * Get a rate series for given to/from currency and dates
+     *
+     * @param $from
+     * @param $to
+     * @param $start
+     * @param $end
+     * @return object
+     */
+    public static function rateSeries($from, $to, $start, $end) {
+        $rates = new self;
+        return $rates->getRateSeries($from, $to, $start, $end);
     }
 
     public function meta() {
@@ -402,6 +439,49 @@ class Currency {
             foreach ($data['query']['results']['rate'] as $row) {
                 $key = str_replace("$base/", '', $row['Name']);
                 $output['rates'][$key] = $row['Ask'];
+            }
+            return $output;
+        }
+        else {
+            Log::warning('No results returned from Yahoo.');
+        }
+
+    }
+
+    protected function convertFromYahooTimeSeries($data) {
+        $output = array();
+        $output['base'] = $this->base;
+        $output['from'] = $this->from;
+        $output['to'] = $this->to;
+        $output['fromDate'] =  $this->fromDate;
+        $output['toDate'] =  $this->toDate;
+
+
+        $output['timestamp'] = strtotime($data['query']['created']);
+        if (isset($data['query']['results']['quote']) and is_array($data['query']['results']['quote'])) {
+            foreach ($data['query']['results']['quote'] as $row) {
+                $key = str_replace('%3dX', '', $row['Symbol']);
+                $output['rates'][$key][$row['Date']] = $row['Adj_Close'];
+            }
+            //Yahoo historical data only supports USD as a base currency
+            if ($this->from != 'USD') {
+                /**
+                $to_usd = $rates['rates'][$to];
+                $from_usd = $rates['rates'][$from];
+                $result =  $to_usd * ($value/$from_usd);
+                 */
+
+                //$convertwith = $this->convertFromYahooTimeSeries($this->yahooTimeSeries('USD', $this->base, $this->fromDate, $this->toDate));
+
+                $currencycompare = new self();
+                $convertfrom = $currencycompare->getRateSeries('USD', $this->from, $this->fromDate, $this->toDate);
+                if (!empty($convertfrom['rates'][$this->from]) and !empty($output['rates'][$this->to])) {
+                    foreach($output['rates'][$this->to] as $date => $value) {
+                        $tovalue = $convertfrom['rates'][$this->from][$date];
+                        $output['rates'][$this->from][$date] = $tovalue;
+                        $output['rates']["$this->from/$this->to"][$date] =  $value * (1/$tovalue);
+                    }
+                }
             }
             return $output;
         }

@@ -1,19 +1,8 @@
 # CConverter
-A simple currency converter plug-in for Laravel 5. Uses: http://jsonrates.com, http://openexchangerates.org and Yahoo Finance. 
-
-### Version 0.0.4
-* Better handling of null returns from API's (Logs errors and converts to 0).
-* Added static wrapper classes for quick "oneline" conversions (older methods should still work).
-* http://jsonrates.com/ have closed down their services, replaced by: https://currencylayer.com/ limited support added, though still untested.
-
-### Version 0.0.3
-* Update to support Guzzle v6 and Laravel 5.2, thanks to @mean-cj
-
-### Version 0.0.2-beta
-* Fixed a calculation bug when using free account at openExchange.
-* Added support for http://jsonrates.com (register for free to get a API key).
-* Added support for historical data. Only available with http://jsonrates.com or a non-free account at http://openexchangerates.org.
-Please note that there have not been implemented a proper error handler yet! 
+A simple currency converter plug-in for Laravel 5. 
+<p>
+Example usage: <a href="https://danielmellum.com/#project-cconvert" target="_blank">https://danielmellum.com/#project-cconvert</a>
+</p>
 
 ##Installation
 require in composer.json 
@@ -58,8 +47,11 @@ $rates = Currency::rates(); //defaults to USD
 
 $rates = Currency::rates('NOK');
 
-//Get the historical rates
+//Get historical rates
 $rates = Currency::rates('NOK', '2014-12-24');
+
+//Get historical rate series
+$rates = Currency::rateSeries('USD', 'NOK', '2016-12-24', ''2016-12-31);
 ```
 
 You can override the settings if/when you create a new instance.
@@ -93,10 +85,28 @@ Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.
 | ----------------- | ----------------- |:------------: | :--------: | :------------------: | :------------------: |
 |~~jsonrates~~ | ~~JsonRates~~*    | ~~no~~     | ~~yes~~   |  ~~yes~~            | ~~no~~ |
 |openexchange | OpenExchangeRates | non-free      | non-free   |  non-free            | yes |
-|yahoo | Yahoo Finance     | yes          | no      |  yes                | no |
+|yahoo | Yahoo Finance     | yes          | yes      |  yes                | no |
 |jsonrates | CurrencyLayer     | ?             |  ?          |  ?                | yes |
 *JsonRates is discontinued and replaced by: https://currencylayer.com
 Limited support for CurrencyLayer added but untested. Requires a user sign-up and access-key set (use jsonrates-app-id='xxx' for now).
+
+### Version 0.0.5
+* Added support for Yahoo finance historical date series ($currencyFrom, $currencyTo, $fromDate, $toDate). PS: if using cache and yahoo as provider, then cache should probably be cleared to avoid any conflicts with the new Yahoo time series currency data. "php artisan cache:clear" 
+
+### Version 0.0.4
+* Better handling of null returns from API's (Logs errors and converts to 0).
+* Added static wrapper classes for quick "oneline" conversions (older methods should still work).
+* http://jsonrates.com/ have closed down their services, replaced by: https://currencylayer.com/ limited support added, though still untested.
+
+### Version 0.0.3
+* Update to support Guzzle v6 and Laravel 5.2, thanks to @mean-cj
+
+### Version 0.0.2-beta
+* Fixed a calculation bug when using free account at openExchange.
+* Added support for http://jsonrates.com (register for free to get a API key).
+* Added support for historical data. Only available with http://jsonrates.com or a non-free account at http://openexchangerates.org.
+Please note that there have not been implemented a proper error handler yet! 
+
 
 ##Disclaimer
 Please take note of the Terms of Use for the different data sources.
