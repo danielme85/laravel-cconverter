@@ -1,11 +1,15 @@
 # CConverter
-A simple currency converter plug-in for Laravel 5. 
+A simple currency conversion plug-in for Laravel 5. 
 <p>
 Example usage: <a href="https://danielmellum.com/#project-cconvert" target="_blank">https://danielmellum.com/#project-cconvert</a>
 </p>
 
-##Installation
-require in composer.json 
+###Installation
+With composer command
+```
+composer require danielme85/laravel-cconverter@dev-master
+```
+or include under require in composer.json 
 ```
 "danielme85/laravel-cconverter": "dev-master"
 ```
@@ -24,13 +28,16 @@ You need to publish the config file with the artisan command:
 ```
 php artisan vendor:publish
 ```
-
+or publish vendor config file for this plug-in only (probably cleaner).
+```
+php artisan vendor:publish --provider="danielme85\CConverter\CConverterServiceProvider"
+```
 Check the new config\CConverter.php file.
 Cache is enabled per default to 60min. I recommend keeping cache enabled (per default in Laravel 5 this is file cache), expecially when using free sources, this will reduce the traffic load on these community sources.
 When doing multiple conversion at the same time from the same currency the base rate will be loaded into the model (as long as you use the same model instance).   
  
 
-##Usage
+###Usage
 
 ```php
 use danielme85\CConverter\Currency;
@@ -108,7 +115,7 @@ Limited support for CurrencyLayer added but untested. Requires a user sign-up an
 Please note that there have not been implemented a proper error handler yet! 
 
 
-##Disclaimer
+###Disclaimer
 Please take note of the Terms of Use for the different data sources.
 https://policies.yahoo.com/us/en/yahoo/terms/product-atos/yql/index.htm
 
