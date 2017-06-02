@@ -3,6 +3,9 @@ A simple currency conversion plug-in for Laravel 5.
 <p>
 Example usage: <a href="https://danielmellum.com/#project-cconvert" target="_blank">https://danielmellum.com/#project-cconvert</a>
 </p>
+<p>
+Please note that as Yahoo Finance has pulled plug on the historical data API, time-series are not available for Yahoo as a data source anymore.
+</p>
 
 ### Installation
 With composer command
@@ -90,12 +93,13 @@ Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.
 ### Supported functions per API
 | Config var               | API               | HTTPS         | Historical | Custom base currency | Sign-up required |
 | ----------------- | ----------------- |:------------: | :--------: | :------------------: | :------------------: |
-|~~jsonrates~~ | ~~JsonRates~~*    | ~~no~~     | ~~yes~~   |  ~~yes~~            | ~~no~~ |
-|openexchange | OpenExchangeRates | non-free      | non-free   |  non-free            | yes |
-|yahoo | Yahoo Finance     | yes          | yes      |  yes                | no |
-|jsonrates | CurrencyLayer     | ?             |  ?          |  ?                | yes |
-*JsonRates is discontinued and replaced by: https://currencylayer.com
-Limited support for CurrencyLayer added but untested. Requires a user sign-up and access-key set (use jsonrates-app-id='xxx' for now).
+|openexchange | https://openexchangerates.org/ | non-free      | non-free   |  non-free            | yes |
+|yahoo | Yahoo Finance     | yes          | no      |  yes                | no |
+|currencylayer | https://currencylayer.com/     | non-free             |  non-free          |  yes                | yes |
+
+
+### Version 0.0.6
+* Added support for currencylayer.com, removed jsonrates.com.
 
 ### Version 0.0.5
 * Added support for Yahoo finance historical date series ($currencyFrom, $currencyTo, $fromDate, $toDate). PS: if using cache and yahoo as provider, then cache should probably be cleared to avoid any conflicts with the new Yahoo time series currency data. "php artisan cache:clear" 

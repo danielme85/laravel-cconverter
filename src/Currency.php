@@ -33,7 +33,6 @@ class Currency {
 
     private $settings, $requestUrl, $base, $rates, $fromCache, $date, $fromDate, $toDate, $from, $to;
 
-
     /*
      *
      * @param string $api to use (will override config if set)
@@ -100,10 +99,10 @@ class Currency {
         }
 
         if (isset($date)) {
-            $url .= '://apilayer.net/api/historical/?acces_key='.$this->settings['jsonrates-app-id'].'&date='.$date.'&source='.$base;
+            $url .= '://apilayer.net/api/historical?access_key='.$this->settings['currencylayer-access-key'].'&date='.$date.'&source='.$base;
         }
         else {
-            $url .= '://apilayer.net/api/live/?acces_key='.$this->settings['jsonrates-app-id'].'&source='.$base;
+            $url .= '://apilayer.net/api/live?access_key='.$this->settings['currencylayer-access-key'].'&source='.$base;
         }
 
         $this->requestUrl = $url;
@@ -120,7 +119,7 @@ class Currency {
         else {
             $url = 'http';
         }
-        $url .= '://jsonrates.com/timeframe/?acces_key='.$this->settings['jsonrates-app-id'].'&source='.$from.'&currencies='.$to.'&start_date='.$dateStart.'&end_date='.$dateEnd;
+        $url .= '://apilayer.net/api/timeframe?access_key='.$this->settings['currencylayer-access-key'].'&source='.$from.'&currencies='.$to.'&start_date='.$dateStart.'&end_date='.$dateEnd;
         $this->requestUrl = $url;
         $client = new Client();
         $response = $client->get($url);
@@ -207,9 +206,11 @@ class Currency {
         $this->date = $date;
         $api = $this->settings['api-source'];
 
+
+
         if ($this->settings['enable-cache']) {
-            if (Cache::has("CConverter$api$base$date")) {
-                $result = Cache::get("CConverter$api$base$date");
+            if ($result = Cache::get("CConverter$api$base$date")) {
+
                 $this->fromCache = true;
                 if (Config::get('CConverter.enable-log')) {
                     Log::debug("Got currency rates from cache: CConverter$api$base$date");
@@ -223,16 +224,16 @@ class Currency {
                     $result = $this->openExchange($base);
                 }
 
-                else if ($api === 'jsonrates') {
+                else if ($api === 'currencylayer') {
                     $result = $this->jsonRates($base);
                 }
 
-                Cache::add("CConverter$api$base$date", $result, $this->settings['cache-min']);
-                $this->fromCache = false;
-
-                if (Config::get('CConverter.enable-log')) {
-                    Log::debug('Added new currency rates to cache: CConverter'.$api.$base.$date.' - for '.$this->settings['cache-min'].' min.');
+                if ($result) {
+                    if(Cache::add("CConverter$api$base$date", $result, $this->settings['cache-min']) and Config::get('CConverter.enable-log')) {
+                        Log::debug('Added new currency rates to cache: CConverter'.$api.$base.$date.' - for '.$this->settings['cache-min'].' min.');
+                    }
                 }
+                $this->fromCache = false;
             }
         }
         else {
@@ -242,7 +243,7 @@ class Currency {
             else if ($api === 'openexchange') {
                 $result = $this->openExchange($base);
             }
-            else if ($api === 'jsonrates') {
+            else if ($api === 'currencylayer') {
                 $result = $this->jsonRates($base);
             }
 
@@ -255,10 +256,10 @@ class Currency {
    /**
     * Get a RateSeries (not supported by OpenExchange)
     *
-    * @param type $from
-    * @param type $to
-    * @param type $dateStart
-    * @param type $dateEnd
+    * @param string $from
+    * @param string $to
+    * @param string $dateStart
+    * @param string $dateEnd
     *
     *  @return object returns a GuzzleHttp\Client object.
     */
@@ -280,7 +281,7 @@ class Currency {
                     return null;
                 }
 
-                else if ($api === 'jsonrates') {
+                else if ($api === 'currencylayer') {
                     $result = $this->jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd);
                 }
 
@@ -299,7 +300,7 @@ class Currency {
             else if ($api === 'openexchange') {
                 return null;
             }
-            else if ($api === 'jsonrates') {
+            else if ($api === 'currencylayer') {
                 $result = $this->jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd);
             }
 
@@ -487,38 +488,37 @@ class Currency {
     }
 
     protected function convertFromJsonRates($data) {
-        $date = $this->date;
-        $base = $data['source'];
-        $output = array();
-        $output['base'] = $base;
+        if (!empty($data)) {
+            if (isset($data['success'])) {
+                if ($data['success']) {
+                    $output = array();
+                    $base = $data['source'];
+                    $output['base'] = $base;
+                    if ($this->date) {
+                        $output['date'] = $this->date;
+                    }
+                    else {
+                        $output['date'] = date('Y-m-d');
+                    }
+                    $output['timestamp'] = $data['timestamp'];
+                    if (isset($data['quotes']) and is_array($data['quotes'])) {
+                        foreach ($data['quotes'] as $key => $row) {
+                            if ($key === "$base$base") {
+                                $key = $base;
+                            }
+                            else {
+                                $key = str_replace($base, '', $key);
+                            }
+                            $output['rates'][$key] = $row;
+                        }
+                    } else {
+                            Log::warning('No results returned from CurrencyLayer.');
+                    }
 
-        if (isset($date)) {
-            $output['timestamp'] = $data['rates'][$date]['timestamp'];
-            if (isset($data['rates']) and is_array($data['rates'])) {
-                foreach ($data['rates'][$date] as $key => $row) {
-                    $key = str_replace($base, '', $key);
-                    $output['rates'][$key] = $row;
+                    return $output;
                 }
             }
-            else {
-                Log::warning('No results returned from JsonRates.');
-            }
-
         }
-        else {
-            $output['timestamp'] = $data['timestamp'];
-            if (isset($data['rates']) and is_array($data['rates'])) {
-                foreach ($data['rates'] as $key => $row) {
-                    $key = str_replace($base, '', $key);
-                    $output['rates'][$key] = row;
-                }
-            }
-            else {
-                Log::warning('No results returned from JsonRates.');
-            }
-        }
-
-        return $output;
     }
 
     protected function convertFromJsonRatesSeries($data) {
@@ -529,15 +529,15 @@ class Currency {
         $output['to'] = $data['start_date'];
         $output['from'] = $data['end_date'];
 
-        if (isset($data['rates']) and is_array($data['rates'])) {
-            foreach ($data['rates'] as $key => $row) {
+        if (isset($data['quotes']) and is_array($data['quotes'])) {
+            foreach ($data['quotes'] as $key => $row) {
                 $key = str_replace($base, '', $key);
                 $output['rates'][$key]['timestamp'] = strtotime($row['utctime']);
-                $output['rates'][$key]['rate'] = $row['rate'];
+                $output['rates'][$key]['rate'] = $row['quotes'];
             }
         }
         else {
-            Log::warning('No results returned from JsonRates.');
+            Log::warning('No results returned from CurrencyLayer.');
         }
 
         return $output;

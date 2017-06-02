@@ -27,17 +27,17 @@
 return array (
     
     //API source. 
-    //Possible values: 'openexchange' | 'yahoo' | 'jsonrates'
-    'api-source' => 'yahoo',
+    //Possible values: 'openexchange' | 'yahoo' | 'currencylayer'
+    'api-source' => 'currencylayer',
     
     //Your app id from openexchangerates.org
     'openex-app-id' => '',
-    
-    //Your app id from jsonrates.com
-    'jsonrates-app-id' => '',
-    
-    //use https? the free version of openexchange and jsonrates does not support https :(
-    'use-ssl' => true,
+
+    //your API access key for currencylayer.com
+    'currencylayer-access-key' => '',
+
+    //use https? the free version of openexchange, jsonrates and currencylayer does not support https :(
+    'use-ssl' => false,
     
     //When using the free account we can still calculate other currencies based on USD as a base thanks to some basic math.
     //enable this if you want real base values insted of calculated ones. Requires enterprice account from openexchangerates.org
