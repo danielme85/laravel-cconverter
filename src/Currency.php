@@ -88,9 +88,6 @@ class Currency {
     }
 
     protected function jsonRates() {
-        $base = $this->base;
-        $date = $this->date;
-
         if ($this->settings['use-ssl']) {
             $url = 'https';
         }
@@ -99,10 +96,10 @@ class Currency {
         }
 
         if (isset($date)) {
-            $url .= '://apilayer.net/api/historical?access_key='.$this->settings['currencylayer-access-key'].'&date='.$date.'&source='.$base;
+            $url .= '://apilayer.net/api/historical?access_key='.$this->settings['currencylayer-access-key'].'&date='.$this->date.'&source='.$this->base;
         }
         else {
-            $url .= '://apilayer.net/api/live?access_key='.$this->settings['currencylayer-access-key'].'&source='.$base;
+            $url .= '://apilayer.net/api/live?access_key='.$this->settings['currencylayer-access-key'].'&source='.$this->base;
         }
 
         $this->requestUrl = $url;
@@ -183,6 +180,29 @@ class Currency {
         return $this->convertFromYahooTimeSeries(json_decode($response->getBody(),true));
     }
 
+
+    protected function fixer() {
+        if ($this->settings['use-ssl']) {
+            $url = 'https';
+        }
+        else {
+            $url = 'http';
+        }
+        if ($this->date and $this->date != '') {
+            $url .= "://api.fixer.io/$this->date?base=$this->base";
+        }
+        else {
+            $url .= "://api.fixer.io/latest?base=$this->base";
+        }
+
+        $this->requestUrl = $url;
+
+        $client = new Client();
+        $response = $client->get($url);
+
+        return $this->convertFromFixer(json_decode($response->getBody(),true));
+    }
+
     /*
      * Get the current rates.
      *
@@ -206,8 +226,6 @@ class Currency {
         $this->date = $date;
         $api = $this->settings['api-source'];
 
-
-
         if ($this->settings['enable-cache']) {
             if ($result = Cache::get("CConverter$api$base$date")) {
 
@@ -218,14 +236,18 @@ class Currency {
             }
             else {
                 if ($api === 'yahoo') {
-                    $result = $this->yahoo($base);
+                    $result = $this->yahoo();
                 }
                 else if ($api === 'openexchange') {
-                    $result = $this->openExchange($base);
+                    $result = $this->openExchange();
                 }
 
                 else if ($api === 'currencylayer') {
-                    $result = $this->jsonRates($base);
+                    $result = $this->jsonRates();
+                }
+
+                else if ($api === 'fixer') {
+                    $result = $this->fixer();
                 }
 
                 if ($result) {
@@ -238,13 +260,16 @@ class Currency {
         }
         else {
             if ($api === 'yahoo') {
-                $result = $this->yahoo($base);
+                $result = $this->yahoo();
             }
             else if ($api === 'openexchange') {
-                $result = $this->openExchange($base);
+                $result = $this->openExchange();
             }
             else if ($api === 'currencylayer') {
-                $result = $this->jsonRates($base);
+                $result = $this->jsonRates();
+            }
+            else if ($api === 'fixer') {
+                $result = $this->fixer();
             }
 
             $this->fromCache = false;
@@ -280,7 +305,6 @@ class Currency {
                 else if ($api === 'openexchange') {
                     return null;
                 }
-
                 else if ($api === 'currencylayer') {
                     $result = $this->jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd);
                 }
@@ -379,7 +403,6 @@ class Currency {
         }
 
         return $result;
-
     }
 
 
@@ -568,6 +591,36 @@ class Currency {
             }
         }
 
+        $output['base'] = $data['base'];
+
+        return $output;
+    }
+
+    protected function convertFromFixer($data) {
+        $output = array();
+        if (!empty($data)) {
+            if (!empty($data['rates'])) {
+                $output['timestamp'] = time();
+                $output['date'] = $data['date'];
+                $this->date = $data['date'];
+
+                foreach ($data['rates'] as $key => $row) {
+                    $output['rates'][$key] = $row;
+                }
+            }
+            else {
+                Log::warning('No results returned from Fixer.io');
+            }
+        }
+        else {
+            if (isset($data['rates']) and is_array($data['rates'])) {
+                $output['rates'] = $data['rates'];
+                $output['timestamp'] = $data['timestamp'];
+            }
+            else {
+                Log::warning('No results returned from Fixer.io');
+            }
+        }
         $output['base'] = $data['base'];
 
         return $output;

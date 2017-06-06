@@ -91,11 +91,12 @@ $info = $currency->meta();
 Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.org/wiki/ISO_4217
 
 ### Supported functions per API
-| Config var               | API               | HTTPS         | Historical | Custom base currency | Sign-up required |
+| Config var               | API               | HTTPS         | Historical | Time Series | Sign-up required |
 | ----------------- | ----------------- |:------------: | :--------: | :------------------: | :------------------: |
 |openexchange | https://openexchangerates.org/ | non-free      | non-free   |  non-free            | yes |
-|yahoo | Yahoo Finance     | yes          | no      |  yes                | no |
-|currencylayer | https://currencylayer.com/     | non-free             |  non-free          |  yes                | yes |
+|yahoo | Yahoo Finance     | yes          | no      |  no                | no |
+|currencylayer | https://currencylayer.com/     | non-free             |  yes          |  non-free                | yes |
+|fixer | http://fixer.io/     | yes             |  yes          |  no                | no |
 
 
 ### Version 0.0.6

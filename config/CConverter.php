@@ -27,7 +27,7 @@
 return array (
     
     //API source. 
-    //Possible values: 'openexchange' | 'yahoo' | 'currencylayer'
+    //Possible values: 'openexchange' | 'yahoo' | 'currencylayer' | 'fixer'
     'api-source' => 'yahoo',
     
     //Your app id from openexchangerates.org
