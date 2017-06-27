@@ -1,10 +1,10 @@
 # CConverter
-A simple currency conversion plug-in for Laravel 5. 
+A simple currency conversion plug-in for Laravel 5.*
 <p>
-Example usage: <a href="https://danielmellum.com/#project-cconvert" target="_blank">https://danielmellum.com/#project-cconvert</a>
+Example usage: <a href="https://danielmellum.com/projects/currency-converter" target="_blank">https://danielmellum.com/projects/currency-converter</a>
 </p>
 <p>
-Please note that as Yahoo Finance has pulled plug on the historical data API, time-series are not available for Yahoo as a data source anymore.
+Please note that as Yahoo Finance has pulled the plug on the historical data API, time-series are not available for Yahoo as a data source anymore.
 </p>
 
 ### Installation
