@@ -1,5 +1,9 @@
 # CConverter
-A simple currency conversion plug-in for Laravel 5.*
+<p>A simple currency conversion plug-in for Laravel 5.* </p>
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://travis-ci.org/danielme85/Laravel-CConverter.svg?branch=master)](https://travis-ci.org/danielme85/Laravel-CConverter)
+
 <p>
 Example usage: <a href="https://danielmellum.com/projects/currency-converter" target="_blank">https://danielmellum.com/projects/currency-converter</a>
 </p>
