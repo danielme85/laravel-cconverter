@@ -42,11 +42,9 @@ class Currency {
      *
      */
     public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null) {
-        $this->settings = Config::get('CConverter');
-        if (!is_array($this->settings)) {
+        if (!$this->settings = Config::get('CConverter')) {
             Log::error('The CConverter config file is needed. Did you run: php artisan vendor:publish ?');
         }
-
         if (isset($api)) {
             $this->settings['api-source'] = $api;
         }
@@ -61,6 +59,11 @@ class Currency {
         }
     }
 
+    /**
+     * Get data from openExchange
+     *
+     * @return array
+     */
     protected function openExchange() {
         $base = $this->base;
         $date = $this->date;
@@ -87,6 +90,11 @@ class Currency {
         return $this->convertFromOpenExchange(json_decode($response->getBody(),true));
     }
 
+    /**
+     * Get data from jsonRates
+     *
+     * @return array
+     */
     protected function jsonRates() {
         if ($this->settings['use-ssl']) {
             $url = 'https';
@@ -109,6 +117,15 @@ class Currency {
         return $this->convertFromJsonRates(json_decode($response->getBody(),true));
     }
 
+    /**
+     * Get jsonRates time series data
+     *
+     * @param string $from
+     * @param string $to
+     * @param string $dateStart
+     * @param string $dateEnd
+     * @return array
+     */
     protected function jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd) {
         if ($this->settings['use-ssl']) {
             $url = 'https';
@@ -124,7 +141,11 @@ class Currency {
         return $this->convertFromJsonRatesSeries(json_decode($response->getBody(),true));
     }
 
-
+    /**
+     * Get data form Yahoo
+     *
+     * @return array
+     */
     protected function yahoo() {
 
         $base = $this->base;
@@ -152,6 +173,15 @@ class Currency {
     }
 
 
+    /**
+     * Get Yahoo time series data
+     *
+     * @param string $from
+     * @param string $to
+     * @param string $dateStart
+     * @param string $dateEnd
+     * @return array
+     */
     protected function yahooTimeSeries($from, $to, $dateStart, $dateEnd) {
         $this->base = 'USD';
         $this->from = $from;
@@ -180,7 +210,11 @@ class Currency {
         return $this->convertFromYahooTimeSeries(json_decode($response->getBody(),true));
     }
 
-
+    /**
+     * Get data from fixer
+     *
+     * @return array
+     */
     protected function fixer() {
         if ($this->settings['use-ssl']) {
             $url = 'https';
@@ -438,16 +472,22 @@ class Currency {
     /**
      * Get a rate series for given to/from currency and dates
      *
-     * @param $from
-     * @param $to
-     * @param $start
-     * @param $end
+     * @param string $from
+     * @param string $to
+     * @param string $start
+     * @param string $end
      * @return object
      */
     public static function rateSeries($from, $to, $start, $end) {
         $rates = new self;
         return $rates->getRateSeries($from, $to, $start, $end);
     }
+
+    /**
+     * Returns array of metadata stored as object attributes for current instance of CConvert
+     *
+     * @return array
+     */
 
     public function meta() {
         return ['settings' =>$this->settings,
@@ -457,6 +497,10 @@ class Currency {
                 'historicalDate' => $this->date];
     }
 
+    /**
+     * @param array $data
+     * @return array
+     */
 
     protected function convertFromYahoo($data) {
         $base = $this->base;
@@ -476,6 +520,12 @@ class Currency {
 
     }
 
+    /**
+     * Convert data from Yahoo Time Series to standardized format.
+     *
+     * @param array $data
+     * @return array
+     */
     protected function convertFromYahooTimeSeries($data) {
         $output = array();
         $output['base'] = $this->base;
@@ -510,6 +560,12 @@ class Currency {
 
     }
 
+    /**
+     * Convert data from jsonRates to standardized format.
+     *
+     * @param array $data
+     * @return array
+     */
     protected function convertFromJsonRates($data) {
         if (!empty($data)) {
             if (isset($data['success'])) {
@@ -544,6 +600,12 @@ class Currency {
         }
     }
 
+    /**
+     * Convert data from jsonRates Series to standardized format.
+     *
+     * @param array $data
+     * @return array
+     */
     protected function convertFromJsonRatesSeries($data) {
         $base = $data['source'];
         $output = array();
@@ -566,6 +628,11 @@ class Currency {
         return $output;
     }
 
+    /**
+     * Convert data from from OpenExchangeRate to standardized format.
+     * @param $data
+     * @return array
+     */
     protected function convertFromOpenExchange($data) {
         $date = $this->date;
         $output = array();
@@ -596,6 +663,12 @@ class Currency {
         return $output;
     }
 
+    /**
+     * Convert data from fixer.io to standardized format.
+     *
+     * @param array $data
+     * @return array
+     */
     protected function convertFromFixer($data) {
         $output = array();
         if (!empty($data)) {
@@ -607,6 +680,8 @@ class Currency {
                 foreach ($data['rates'] as $key => $row) {
                     $output['rates'][$key] = $row;
                 }
+                //add 1:1 conversion rate from base for testing
+                $output['rates'][$data['base']] = 1;
             }
             else {
                 Log::warning('No results returned from Fixer.io');
