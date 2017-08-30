@@ -31,7 +31,7 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      */
 
     public function testConversionDefault() {
-        $currency = new \danielme85\CConverter\Currency();
+        $currency = new \danielme85\CConverter\Currency('fixer');
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
     }
 
@@ -42,7 +42,7 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testRatesDefault() {
-        $currency = new \danielme85\CConverter\Currency();
+        $currency = new \danielme85\CConverter\Currency('fixer');
         $rates = $currency->getRates('USD');
         $this->assertArrayHasKey('rates', $rates);
         $this->assertGreaterThan(0, $this->count($rates['rates']));

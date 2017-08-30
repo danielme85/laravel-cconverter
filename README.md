@@ -8,6 +8,13 @@
 Example usage: <a href="https://danielmellum.com/projects/currency-converter" target="_blank">https://danielmellum.com/projects/currency-converter</a>
 </p>
 <p>
+If you are having composer requirement issues using the latest release or dev-master with Laravel v5.4 and below, try the v0.0.7 release.
+
+```
+composer require danielme85/laravel-cconverter@v0.0.7
+```  
+</p>
+<p>
 Please note that as Yahoo Finance has pulled the plug on the historical data API, time-series are not available for Yahoo as a data source anymore.
 </p>
 
@@ -102,6 +109,14 @@ Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.
 |currencylayer | https://currencylayer.com/     | non-free             |  yes          |  non-free                | yes |
 |fixer | http://fixer.io/     | yes             |  yes          |  no                | no |
 
+### Version 0.1.0
+* Changed composer requirements to match Laravel 5.5+, phpunit 6.0+
+* Changed default currency data from Yahoo to source to fixer.io (Yahoo http source unreliable).
+* Testing in php 7.0 and Laravel 5.5+ environment.
+
+### Version 0.0.7
+* Latest version tested in Laravel 5.4 and php 5.6 environment.
+* Added support for fixer.io
 
 ### Version 0.0.6
 * Added support for currencylayer.com, removed jsonrates.com.
