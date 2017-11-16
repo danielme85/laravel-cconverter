@@ -22,5 +22,15 @@
         "psr-4": {
             "danielme85\\CConverter\\": "src"
         }
-    }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "danielme85\\CConverter\\CConverterServiceProvider"
+            ],
+            "aliases": {
+                "Currency": "danielme85\\CConverter\\CConverter"
+            }
+        }
+    },
 }

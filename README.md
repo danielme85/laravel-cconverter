@@ -29,11 +29,13 @@ or include under require in composer.json
 ```
 
 And like always slap a line in your config\app.php under Service Providers
+<br>*(If you use Laravel 5.5+ you could skip this step as Autodiscovery has been enabled for this package.)*
 ```
 danielme85\CConverter\CConverterServiceProvider::class,
 ```
 
 If you want a Class alias add the Facade in the same config file under Class Aliases (Currency is used in this example but you can name it whatever you want)
+<br>*(If you use Laravel 5.5+ you could skip this step as Autodiscovery has been enabled for this package.)*
 ```
 'Currency'  => danielme85\CConverter\CConverter::class,
 ```
