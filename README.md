@@ -111,6 +111,10 @@ Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.
 |currencylayer | https://currencylayer.com/     | non-free             |  yes          |  non-free                | yes |
 |fixer | http://fixer.io/     | yes             |  yes          |  no                | no |
 
+### Version 0.1.1
+* Added Laravel .env support for config settings. 
+* Added unit testing for all sources and test data is local file now. 
+
 ### Version 0.1.0
 * Changed composer requirements to match Laravel 5.5+, phpunit 6.0+
 * Changed default currency data from Yahoo to source to fixer.io (Yahoo http source unreliable).

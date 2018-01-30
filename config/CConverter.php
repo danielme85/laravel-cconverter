@@ -28,29 +28,29 @@ return array (
     
     //API source. 
     //Possible values: 'openexchange' | 'yahoo' | 'currencylayer' | 'fixer'
-    'api-source' => 'fixer',
-    
+    'api-source' => env('CC_API_SOURCE', 'currencylayer'),
+
     //Your app id from openexchangerates.org
-    'openex-app-id' => '',
+    'openex-app-id' =>  env('CC_OPENEXCHANGE_APP_ID', ''),
 
     //your API access key for currencylayer.com
-    'currencylayer-access-key' => '',
+    'currencylayer-access-key' => env('CC_CURRENCYLAYER_ACCESS_KEY', ''),
 
-    //use https? the free version of openexchange, jsonrates and currencylayer does not support https :(
-    'use-ssl' => false,
-    
+    //use https? the free version of openexchange and jsonrates does not support https :(
+    'use-ssl' => env('CC_USE_SSL', false),
+
     //When using the free account we can still calculate other currencies based on USD as a base thanks to some basic math.
     //enable this if you want real base values insted of calculated ones. Requires enterprice account from openexchangerates.org
-    'openex-use-real-base' => false,
+    'openex-use-real-base' => env('CC_USE_REAL_BASE', false),
 
     //use Laravel cache engine to cache the results.
-    'enable-cache' => true,
-    
+    'enable-cache' => env('CC_ENABLE_CACHE', true),
+
     //minutes cache should expire.
-    'cache-min' => 60,
-    
+    'cache-min' => env('CC_ENABLE_CACHE',60),
+
     //use Laravel logging
-    'enable-log' => false,
+    'enable-log' => env('CC_ENABLE_LOG',false),
     
     //enabled currencies (only in use for yahoo)
     //add/remove as needed. 

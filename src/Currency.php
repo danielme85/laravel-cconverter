@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Log;
 
 class Currency {
 
-    private $settings, $requestUrl, $base, $rates, $fromCache, $date, $fromDate, $toDate, $from, $to;
+    private $settings, $requestUrl, $base, $rates, $fromCache, $date, $fromDate, $toDate, $from, $to, $runastest;
 
     /*
      *
@@ -39,9 +39,10 @@ class Currency {
      * @param boolean $https (true/false will override config if set)
      * @param boolean $useCache (true/false will override config if set)
      * @param integer $cacheMin (number of minutes for cache to expire will override config if set)
+     * @param boolean $runastest Run as test and use json test data in /tests instead of actually http-rest results from API's
      *
      */
-    public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null) {
+    public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = false) {
         if (!$this->settings = Config::get('CConverter')) {
             Log::error('The CConverter config file is needed. Did you run: php artisan vendor:publish ?');
         }
@@ -57,6 +58,7 @@ class Currency {
         if (isset($cacheMin)) {
             $this->settings['cache-min'] = $cacheMin;
         }
+        $this->runastest = $runastest;
     }
 
     /**
@@ -65,6 +67,11 @@ class Currency {
      * @return array
      */
     protected function openExchange() {
+        //use test data if running as test
+        if ($this->runastest) {
+            return $this->convertFromOpenExchange(json_decode(file_get_contents(dirname(__FILE__). '/../tests/openExchangeTestData.json'), true));
+        }
+
         $base = $this->base;
         $date = $this->date;
 
@@ -96,6 +103,11 @@ class Currency {
      * @return array
      */
     protected function jsonRates() {
+        //use test data if running as test
+        if ($this->runastest) {
+            return $this->convertFromJsonRates(json_decode(file_get_contents(dirname(__FILE__). '/../tests/currencyLayerTestData.json'), true));
+        }
+
         if ($this->settings['use-ssl']) {
             $url = 'https';
         }
@@ -147,9 +159,12 @@ class Currency {
      * @return array
      */
     protected function yahoo() {
+        //use test data if running as test
+        if ($this->runastest) {
+            return $this->convertFromYahoo(json_decode(file_get_contents(dirname(__FILE__). '/../tests/yahooTestData.json'), true));
+        }
 
         $base = $this->base;
-
         if ($this->settings['use-ssl']) {
             $url = 'https';
         }
@@ -216,6 +231,10 @@ class Currency {
      * @return array
      */
     protected function fixer() {
+        //use test data if running as test
+        if ($this->runastest) {
+            return $this->convertFromFixer(json_decode(file_get_contents(dirname(__FILE__). '/../tests/fixerTestData.json'), true));
+        }
         if ($this->settings['use-ssl']) {
             $url = 'https';
         }
@@ -313,7 +332,7 @@ class Currency {
     }
 
    /**
-    * Get a RateSeries (not supported by OpenExchange)
+    * Get a RateSeries (not supported by OpenExchange or fixer.io)
     *
     * @param string $from
     * @param string $to
@@ -337,6 +356,11 @@ class Currency {
                     $result = $this->yahooTimeSeries($from, $to, $dateStart, $dateEnd);
                 }
                 else if ($api === 'openexchange') {
+                    Log::error('Openexchange does not support currency rate time-series.');
+                    return null;
+                }
+                else if ($api === 'fixer') {
+                    Log::error('Fixer.io does not support currency rate time-series.');
                     return null;
                 }
                 else if ($api === 'currencylayer') {
@@ -356,6 +380,11 @@ class Currency {
                 $result = $this->yahooTimeSeries($from, $to, $dateStart, $dateEnd);
             }
             else if ($api === 'openexchange') {
+                Log::error('Openexchange does not support currency rate time-series.');
+                return null;
+            }
+            else if ($api === 'fixer') {
+                Log::error('Fixer.io does not support currency rate time-series.');
                 return null;
             }
             else if ($api === 'currencylayer') {
@@ -381,7 +410,6 @@ class Currency {
      */
     public function convert($from, $to, $value, $round = null, $date = null) {
         $result = array();
-
 
         if ($value === 0 or $value === null or $value === '' or empty($value)) {
             return 0;
@@ -607,6 +635,8 @@ class Currency {
      * @return array
      */
     protected function convertFromJsonRatesSeries($data) {
+        echo json_encode($data);
+        exit();
         $base = $data['source'];
         $output = array();
         $output['base'] = $base;
