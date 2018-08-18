@@ -28,7 +28,7 @@ return array (
     
     //API source. 
     //Possible values: 'openexchange' | 'yahoo' | 'currencylayer' | 'fixer'
-    'api-source' => env('CC_API_SOURCE', 'currencylayer'),
+    'api-source' => env('CC_API_SOURCE', 'yahoo'),
 
     //Your app id from openexchangerates.org
     'openex-app-id' =>  env('CC_OPENEXCHANGE_APP_ID', ''),
@@ -36,12 +36,19 @@ return array (
     //your API access key for currencylayer.com
     'currencylayer-access-key' => env('CC_CURRENCYLAYER_ACCESS_KEY', ''),
 
+    //your API access key for fixer.io
+    'fixer-access-key' => env('CC_FIXERIO_ACCESS_KEY', ''),
+
     //use https? the free version of openexchange and jsonrates does not support https :(
     'use-ssl' => env('CC_USE_SSL', false),
 
     //When using the free account we can still calculate other currencies based on USD as a base thanks to some basic math.
-    //enable this if you want real base values insted of calculated ones. Requires enterprice account from openexchangerates.org
+    //enable this if you want real base values instead of calculated ones. Requires enterprise account from openexchangerates.org
     'openex-use-real-base' => env('CC_USE_REAL_BASE', false),
+
+    //When using the free account we can still calculate other currencies based on EUR as a base thanks to some basic math.
+    //enable this if you want real base values instead of calculated ones. Requires payed account on fixer.io
+    'fixer-use-real-base' => env('CC_USE_REAL_BASE_FIXER', false),
 
     //use Laravel cache engine to cache the results.
     'enable-cache' => env('CC_ENABLE_CACHE', true),
@@ -49,7 +56,7 @@ return array (
     //minutes cache should expire.
     'cache-min' => env('CC_ENABLE_CACHE',60),
 
-    //use Laravel logging
+    //use Laravel detailed logging
     'enable-log' => env('CC_ENABLE_LOG',false),
     
     //enabled currencies (only in use for yahoo)

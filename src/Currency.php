@@ -1,39 +1,30 @@
-<?php namespace danielme85\CConverter;
-/*
- * The MIT License
- *
- * Copyright 2015 Daniel Mellum.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+<?php
 
-use GuzzleHttp\Client;
+namespace danielme85\CConverter;
+
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+class Currency
+{
 
-class Currency {
+    /*retire*/
+    public $api;
+    public $settings;
+    public $base = 'USD';
+    public $rates;
+    public $fromCache = false;
+    public $logEnabled = false;
 
-    private $settings, $requestUrl, $base, $rates, $fromCache, $date, $fromDate, $toDate, $from, $to, $runastest;
+    /**
+     * @var CurrencyProvider
+     */
+    protected $provider;
 
-    /*
+    protected $runastest;
+
+    /**
      *
      * @param string $api to use (will override config if set)
      * @param boolean $https (true/false will override config if set)
@@ -44,8 +35,9 @@ class Currency {
      */
     public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = false) {
         if (!$this->settings = Config::get('CConverter')) {
-            Log::error('The CConverter config file is needed. Did you run: php artisan vendor:publish ?');
+            Log::info('The CConverter.php config file was not found.');
         }
+        //Override config/settings with constructor variables if present.
         if (isset($api)) {
             $this->settings['api-source'] = $api;
         }
@@ -58,202 +50,58 @@ class Currency {
         if (isset($cacheMin)) {
             $this->settings['cache-min'] = $cacheMin;
         }
+
+        $this->logEnabled = $this->settings['enable-log'];
+        $this->api = $this->settings['api-source'];
         $this->runastest = $runastest;
+
+        $this->provider = CurrencyProvider::getProvider($this->api);
+        $this->provider->addSettings($this->settings);
+        $this->provider->setTestMode($this->runastest);
     }
 
-    /**
-     * Get data from openExchange
-     *
-     * @return array
-     */
-    protected function openExchange() {
-        //use test data if running as test
-        if ($this->runastest) {
-            return $this->convertFromOpenExchange(json_decode(file_get_contents(dirname(__FILE__). '/../tests/openExchangeTestData.json'), true));
-        }
-
-        $base = $this->base;
-        $date = $this->date;
-
-        if ($this->settings['use-ssl']) {
-            $url = 'https';
-        }
-        else {
-            $url = 'http';
-        }
-
-        if (isset($date)) {
-            $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] .'&start='.$date.'&end='.$date.'&base='.$base;
-        }
-        else {
-            $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] .'&base='.$base;
-        }
-
-        $this->requestUrl = $url;
-
-        $client = new Client();
-        $response = $client->get($url);
-
-        return $this->convertFromOpenExchange(json_decode($response->getBody(),true));
-    }
-
-    /**
-     * Get data from jsonRates
-     *
-     * @return array
-     */
-    protected function jsonRates() {
-        //use test data if running as test
-        if ($this->runastest) {
-            return $this->convertFromJsonRates(json_decode(file_get_contents(dirname(__FILE__). '/../tests/currencyLayerTestData.json'), true));
-        }
-
-        if ($this->settings['use-ssl']) {
-            $url = 'https';
-        }
-        else {
-            $url = 'http';
-        }
-
-        if (isset($date)) {
-            $url .= '://apilayer.net/api/historical?access_key='.$this->settings['currencylayer-access-key'].'&date='.$this->date.'&source='.$this->base;
-        }
-        else {
-            $url .= '://apilayer.net/api/live?access_key='.$this->settings['currencylayer-access-key'].'&source='.$this->base;
-        }
-
-        $this->requestUrl = $url;
-        $client = new Client();
-        $response = $client->get($url);
-
-        return $this->convertFromJsonRates(json_decode($response->getBody(),true));
-    }
-
-    /**
-     * Get jsonRates time series data
-     *
-     * @param string $from
-     * @param string $to
-     * @param string $dateStart
-     * @param string $dateEnd
-     * @return array
-     */
-    protected function jsonRatesTimeSeries($from, $to, $dateStart, $dateEnd) {
-        if ($this->settings['use-ssl']) {
-            $url = 'https';
-        }
-        else {
-            $url = 'http';
-        }
-        $url .= '://apilayer.net/api/timeframe?access_key='.$this->settings['currencylayer-access-key'].'&source='.$from.'&currencies='.$to.'&start_date='.$dateStart.'&end_date='.$dateEnd;
-        $this->requestUrl = $url;
-        $client = new Client();
-        $response = $client->get($url);
-
-        return $this->convertFromJsonRatesSeries(json_decode($response->getBody(),true));
-    }
-
-    /**
-     * Get data form Yahoo
-     *
-     * @return array
-     */
-    protected function yahoo() {
-        //use test data if running as test
-        if ($this->runastest) {
-            return $this->convertFromYahoo(json_decode(file_get_contents(dirname(__FILE__). '/../tests/yahooTestData.json'), true));
-        }
-
-        $base = $this->base;
-        if ($this->settings['use-ssl']) {
-            $url = 'https';
-        }
-        else {
-            $url = 'http';
-        }
-
-        $url .= '://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.xchange%20where%20pair%20in%20(%22';
-
-        foreach ($this->settings['yahoo-currencies'] as $currency) {
-            $url .= "$base$currency%2C";
-        }
-        $url .= '%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys';
-
-        $this->requestUrl = $url;
-
-        $client = new Client();
-        $response = $client->get($url);
-
-        return $this->convertFromYahoo(json_decode($response->getBody(),true));
+    public function provider() : CurrencyProvider
+    {
+        return $this->provider;
     }
 
 
-    /**
-     * Get Yahoo time series data
-     *
-     * @param string $from
-     * @param string $to
-     * @param string $dateStart
-     * @param string $dateEnd
-     * @return array
-     */
-    protected function yahooTimeSeries($from, $to, $dateStart, $dateEnd) {
-        $this->base = 'USD';
-        $this->from = $from;
-        $this->to = $to;
-        $this->fromDate = $dateStart;
-        $this->toDate = $dateEnd;
 
-        if ($this->settings['use-ssl']) {
-            $url = 'https';
+    public function getRates($base = null, $date = null) : array
+    {
+        $this->fromCache = false;
+        $api = $this->api;
+
+        if (!empty($base)) {
+            $this->base = $base;
         }
         else {
-            $url = 'http';
+            $this->base = $base;
         }
 
-        if ($to === 'USD') {
-            $to = $from;
-        }
-
-        $url .= "://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.historicaldata%20where%20symbol%20%3D%20%22$to%3DX%22%20and%20startDate%20%3D%20%22$dateStart%22%20and%20endDate%20%3D%20%22$dateEnd%22&format=json&diagnostics=false&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys&c";
-
-        $this->requestUrl = $url;
-
-        $client = new Client();
-        $response = $client->get($url);
-
-        return $this->convertFromYahooTimeSeries(json_decode($response->getBody(),true));
-    }
-
-    /**
-     * Get data from fixer
-     *
-     * @return array
-     */
-    protected function fixer() {
-        //use test data if running as test
-        if ($this->runastest) {
-            return $this->convertFromFixer(json_decode(file_get_contents(dirname(__FILE__). '/../tests/fixerTestData.json'), true));
-        }
-        if ($this->settings['use-ssl']) {
-            $url = 'https';
+        if ($this->settings['enable-cache'] === true) {
+            if ($rates = Cache::get("CConverter$api$base$date")) {
+                $this->fromCache = true;
+                if ($this->logEnabled) {
+                    Log::debug("Got currency rates from cache: CConverter$api$base$date");
+                }
+            }
+            else {
+                $rates = $this->provider->rates($base, $date);
+                if ($rates) {
+                    if(Cache::add("CConverter$api$base$date", $rates, $this->settings['cache-min']) and $this->logEnabled) {
+                        Log::debug('Added new currency rates to cache: CConverter'.$api.$base.$date.' - for '.$this->settings['cache-min'].' min.');
+                    }
+                }
+            }
         }
         else {
-            $url = 'http';
-        }
-        if ($this->date and $this->date != '') {
-            $url .= "://api.fixer.io/$this->date?base=$this->base";
-        }
-        else {
-            $url .= "://api.fixer.io/latest?base=$this->base";
+            $rates = $this->provider->rates($base, $date);
         }
 
-        $this->requestUrl = $url;
+        $this->rates = $rates;
 
-        $client = new Client();
-        $response = $client->get($url);
-
-        return $this->convertFromFixer(json_decode($response->getBody(),true));
+        return $this->rates;
     }
 
     /*
@@ -264,7 +112,7 @@ class Currency {
      *
      * @return object returns a GuzzleHttp\Client object.
      */
-    public function getRates($base = null, $date = null) {
+    public function getRatesOLD($base = null, $date = null) {
 
         //if there is no base spesified it will default to USD.
         //Also for the free OpenExchange account there is no support for change of base currency.
@@ -419,7 +267,6 @@ class Currency {
         if (!$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
             $base = 'USD';
         }
-
         else {
             $base = $from;
         }
@@ -523,211 +370,5 @@ class Currency {
                 'base' => $this->base,
                 'fromCache' => $this->fromCache,
                 'historicalDate' => $this->date];
-    }
-
-    /**
-     * @param array $data
-     * @return array
-     */
-
-    protected function convertFromYahoo($data) {
-        $base = $this->base;
-        $output = array();
-        $output['base'] = $base;
-        $output['timestamp'] = strtotime($data['query']['created']);
-        if (isset($data['query']['results']['rate']) and is_array($data['query']['results']['rate'])) {
-            foreach ($data['query']['results']['rate'] as $row) {
-                $key = str_replace("$base/", '', $row['Name']);
-                $output['rates'][$key] = $row['Ask'];
-            }
-            return $output;
-        }
-        else {
-            Log::warning('No results returned from Yahoo.');
-        }
-
-    }
-
-    /**
-     * Convert data from Yahoo Time Series to standardized format.
-     *
-     * @param array $data
-     * @return array
-     */
-    protected function convertFromYahooTimeSeries($data) {
-        $output = array();
-        $output['base'] = $this->base;
-        $output['from'] = $this->from;
-        $output['to'] = $this->to;
-        $output['fromDate'] =  $this->fromDate;
-        $output['toDate'] =  $this->toDate;
-        $output['timestamp'] = strtotime($data['query']['created']);
-
-        if (isset($data['query']['results']['quote']) and is_array($data['query']['results']['quote'])) {
-            foreach ($data['query']['results']['quote'] as $row) {
-                $key = str_replace('%3dX', '', $row['Symbol']);
-                $output['rates'][$key][$row['Date']] = $row['Adj_Close'];
-            }
-            //Yahoo historical data only supports USD as a base currency
-            if ($this->from != 'USD') {
-                $currencycompare = new self();
-                $convertfrom = $currencycompare->getRateSeries('USD', $this->from, $this->fromDate, $this->toDate);
-                if (!empty($convertfrom['rates'][$this->from]) and !empty($output['rates'][$this->to])) {
-                    foreach($output['rates'][$this->to] as $date => $value) {
-                        $tovalue = $convertfrom['rates'][$this->from][$date];
-                        $output['rates'][$this->from][$date] = $tovalue;
-                        $output['rates']["$this->from/$this->to"][$date] =  $value * (1/$tovalue);
-                    }
-                }
-            }
-            return $output;
-        }
-        else {
-            Log::warning('No results returned from Yahoo.');
-        }
-
-    }
-
-    /**
-     * Convert data from jsonRates to standardized format.
-     *
-     * @param array $data
-     * @return array
-     */
-    protected function convertFromJsonRates($data) {
-        if (!empty($data)) {
-            if (isset($data['success'])) {
-                if ($data['success']) {
-                    $output = array();
-                    $base = $data['source'];
-                    $output['base'] = $base;
-                    if ($this->date) {
-                        $output['date'] = $this->date;
-                    }
-                    else {
-                        $output['date'] = date('Y-m-d');
-                    }
-                    $output['timestamp'] = $data['timestamp'];
-                    if (isset($data['quotes']) and is_array($data['quotes'])) {
-                        foreach ($data['quotes'] as $key => $row) {
-                            if ($key === "$base$base") {
-                                $key = $base;
-                            }
-                            else {
-                                $key = str_replace($base, '', $key);
-                            }
-                            $output['rates'][$key] = $row;
-                        }
-                    } else {
-                            Log::warning('No results returned from CurrencyLayer.');
-                    }
-
-                    return $output;
-                }
-            }
-        }
-    }
-
-    /**
-     * Convert data from jsonRates Series to standardized format.
-     *
-     * @param array $data
-     * @return array
-     */
-    protected function convertFromJsonRatesSeries($data) {
-        echo json_encode($data);
-        exit();
-        $base = $data['source'];
-        $output = array();
-        $output['base'] = $base;
-
-        $output['to'] = $data['start_date'];
-        $output['from'] = $data['end_date'];
-
-        if (isset($data['quotes']) and is_array($data['quotes'])) {
-            foreach ($data['quotes'] as $key => $row) {
-                $key = str_replace($base, '', $key);
-                $output['rates'][$key]['timestamp'] = strtotime($row['utctime']);
-                $output['rates'][$key]['rate'] = $row['quotes'];
-            }
-        }
-        else {
-            Log::warning('No results returned from CurrencyLayer.');
-        }
-
-        return $output;
-    }
-
-    /**
-     * Convert data from from OpenExchangeRate to standardized format.
-     * @param $data
-     * @return array
-     */
-    protected function convertFromOpenExchange($data) {
-        $date = $this->date;
-        $output = array();
-
-        if (isset($date)) {
-            if (isset($data['rates'][$date]) and is_array($data['rates'][$date])) {
-                foreach ($data['rates'][$date] as $key => $row) {
-                    $output['rates'][$key] = $row;
-                    $output['timestamp'] = strtotime($date);
-                }
-            }
-            else {
-                Log::warning('No results returned from OpenExchange.');
-            }
-        }
-        else {
-            if (isset($data['rates']) and is_array($data['rates'])) {
-                $output['rates'] = $data['rates'];
-                $output['timestamp'] = $data['timestamp'];
-            }
-            else {
-                Log::warning('No results returned from OpenExchange.');
-            }
-        }
-
-        $output['base'] = $data['base'];
-
-        return $output;
-    }
-
-    /**
-     * Convert data from fixer.io to standardized format.
-     *
-     * @param array $data
-     * @return array
-     */
-    protected function convertFromFixer($data) {
-        $output = array();
-        if (!empty($data)) {
-            if (!empty($data['rates'])) {
-                $output['timestamp'] = time();
-                $output['date'] = $data['date'];
-                $this->date = $data['date'];
-
-                foreach ($data['rates'] as $key => $row) {
-                    $output['rates'][$key] = $row;
-                }
-                //add 1:1 conversion rate from base for testing
-                $output['rates'][$data['base']] = 1;
-            }
-            else {
-                Log::warning('No results returned from Fixer.io');
-            }
-        }
-        else {
-            if (isset($data['rates']) and is_array($data['rates'])) {
-                $output['rates'] = $data['rates'];
-                $output['timestamp'] = $data['timestamp'];
-            }
-            else {
-                Log::warning('No results returned from Fixer.io');
-            }
-        }
-        $output['base'] = $data['base'];
-
-        return $output;
     }
 }

@@ -1,4 +1,4 @@
-# CConverter
+# Laravel Currency Converter
 <p>A simple currency conversion plug-in for Laravel 5.* </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -14,8 +14,25 @@ If you are having composer requirement issues using the latest release or dev-ma
 composer require danielme85/laravel-cconverter@v0.0.7
 ```  
 </p>
+
+Version testing and requirements
+
+| Version        | Tested with   | Requires Min |
+| :----------:   |:-------------:| :-----------:|
+| v0.2.0         | Laravel 5.6   | Laravel 5.5  |
+| v0.1.0         | Laravel 5.5   | Laravel 5.5  |    
+| v0.0.7         | Laravel 5.5   | Laravel 5.4  |    
+| v0.0.6         | Laravel 5.4   | Laravel 5.3  |  
+
 <p>
-Please note that as Yahoo Finance has pulled the plug on the historical data API, time-series are not available for Yahoo as a data source anymore.
+Please note:
+
+* Yahoo Finance has pulled the plug on the historical data API, time-series are not available for Yahoo as a data source anymore.
+* Fixer.io has gone to the dark side and requires a sign-up now. You only get 1000 req per month, I don't recommend using this...
+unless you leverage cache... or maybe even store a model of the response data. You would need to create your own model and migration
+as needed. Note that storing data for more then temporary cache might go against data providers user terms.
+ 
+ 
 </p>
 
 ### Installation
@@ -109,40 +126,7 @@ Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.
 |openexchange | https://openexchangerates.org/ | non-free      | non-free   |  non-free            | yes |
 |yahoo | Yahoo Finance     | yes          | no      |  no                | no |
 |currencylayer | https://currencylayer.com/     | non-free             |  yes          |  non-free                | yes |
-|fixer | http://fixer.io/     | yes             |  yes          |  no                | no |
-
-### Version 0.1.1
-* Added Laravel .env support for config settings. 
-* Added unit testing for all sources and test data is local file now. 
-
-### Version 0.1.0
-* Changed composer requirements to match Laravel 5.5+, phpunit 6.0+
-* Changed default currency data from Yahoo to source to fixer.io (Yahoo http source unreliable).
-* Testing in php 7.0 and Laravel 5.5+ environment.
-
-### Version 0.0.7
-* Latest version tested in Laravel 5.4 and php 5.6 environment.
-* Added support for fixer.io
-
-### Version 0.0.6
-* Added support for currencylayer.com, removed jsonrates.com.
-
-### Version 0.0.5
-* Added support for Yahoo finance historical date series ($currencyFrom, $currencyTo, $fromDate, $toDate). PS: if using cache and yahoo as provider, then cache should probably be cleared to avoid any conflicts with the new Yahoo time series currency data. "php artisan cache:clear" 
-
-### Version 0.0.4
-* Better handling of null returns from API's (Logs errors and converts to 0).
-* Added static wrapper classes for quick "oneline" conversions (older methods should still work).
-* http://jsonrates.com/ have closed down their services, replaced by: https://currencylayer.com/ limited support added, though still untested.
-
-### Version 0.0.3
-* Update to support Guzzle v6 and Laravel 5.2, thanks to @mean-cj
-
-### Version 0.0.2-beta
-* Fixed a calculation bug when using free account at openExchange.
-* Added support for http://jsonrates.com (register for free to get a API key).
-* Added support for historical data. Only available with http://jsonrates.com or a non-free account at http://openexchangerates.org.
-Please note that there have not been implemented a proper error handler yet! 
+|fixer | http://fixer.io/     | yes             |  yes          |  no                | yes |
 
 
 ### Disclaimer

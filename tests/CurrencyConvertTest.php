@@ -6,12 +6,35 @@
  * Time: 9:21 PM
 */
 
+use danielme85\CConverter\Currency;
 
 class CurrencyConvertTest extends Orchestra\Testbench\TestCase
 {
     protected function getPackageProviders($app)
     {
         return ['danielme85\CConverter\CConverterServiceProvider'];
+    }
+
+    /**
+     * @group experiment
+     */
+    public function testExperiment() {
+        $currency = new Currency('fixer', null, null, null, true);
+        d($currency->getRates('USD'));
+
+    }
+
+    /**
+     * Test of default settings and init
+     *
+     * @group general
+     *
+     * @return void
+     */
+    public function testDefaultApi() {
+        $this->assertEquals(1 , Currency::conv('USD', 'USD', 1));
+        $this->assertNotEmpty(Currency::rates());
+        $this->assertNotEmpty(Currency::rates('USD', date('Y-m-d')));
     }
 
     /**
@@ -22,8 +45,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      */
     public function testCreateInstanceFixer()
     {
-        $curreny = new \danielme85\CConverter\Currency('fixer', null, null, null, true);
-        $this->assertNotEmpty($curreny);
+        $currency = new Currency('fixer', null, null, null, true);
+        $this->assertNotEmpty($currency);
     }
 
     /**
@@ -33,8 +56,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testConvertFixer() {
-        $curreny = new \danielme85\CConverter\Currency('fixer', null, null, null, true);
-        $this->assertEquals(1, $curreny->convert('USD', 'USD', 1));
+        $currency = new Currency('fixer', null, null, null, true);
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
     }
 
 
@@ -45,8 +68,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testGetRatesFixer() {
-        $curreny = new \danielme85\CConverter\Currency('fixer', null, null, null, true);
-        $rates = $curreny->getRates('USD');
+        $currency = new Currency('fixer', null, null, null, true);
+        $rates = $currency->getRates('USD');
         $this->assertArrayHasKey('rates', $rates);
         $this->assertGreaterThan(0, $this->count($rates['rates']));
     }
@@ -59,8 +82,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      */
     public function testCreateInstanceCurrencyLayer()
     {
-        $curreny = new \danielme85\CConverter\Currency('currencylayer', null, null, null, true);
-        $this->assertNotEmpty($curreny);
+        $currency = new Currency('currencylayer', null, null, null, true);
+        $this->assertNotEmpty($currency);
     }
 
     /**
@@ -70,8 +93,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testConvertCurrencyLayer() {
-        $curreny = new \danielme85\CConverter\Currency('currencylayer', null, null, null, true);
-        $this->assertEquals(1, $curreny->convert('USD', 'USD', 1));
+        $currency = new Currency('currencylayer', null, null, null, true);
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
     }
 
     /**
@@ -81,8 +104,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testGetRatesCurrencyLayer() {
-        $curreny = new \danielme85\CConverter\Currency('currencylayer', null, null, null, true);
-        $rates = $curreny->getRates('USD');
+        $currency = new Currency('currencylayer', null, null, null, true);
+        $rates = $currency->getRates('USD');
         $this->assertArrayHasKey('rates', $rates);
         $this->assertGreaterThan(0, $this->count($rates['rates']));
     }
@@ -95,8 +118,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      */
     public function testCreateInstanceYahoo()
     {
-        $curreny = new \danielme85\CConverter\Currency('yahoo', null, null, null, true);
-        $this->assertNotEmpty($curreny);
+        $currency = new Currency('yahoo', null, null, null, true);
+        $this->assertNotEmpty($currency);
     }
 
     /**
@@ -106,8 +129,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testConvertYahoo() {
-        $curreny = new \danielme85\CConverter\Currency('yahoo', null, null, null, true);
-        $this->assertEquals(1, $curreny->convert('USD', 'USD', 1));
+        $currency = new Currency('yahoo', null, null, null, true);
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
     }
 
     /**
@@ -117,8 +140,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testGetRatesYahoo() {
-        $curreny = new \danielme85\CConverter\Currency('yahoo', null, null, null, true);
-        $rates = $curreny->getRates('USD');
+        $currency = new Currency('yahoo', null, null, null, true);
+        $rates = $currency->getRates('USD');
         $this->assertArrayHasKey('rates', $rates);
         $this->assertGreaterThan(0, $this->count($rates['rates']));
     }
@@ -131,8 +154,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      */
     public function testCreateInstanceOpenExchange()
     {
-        $curreny = new \danielme85\CConverter\Currency('openexchange', null, null, null, true);
-        $this->assertNotEmpty($curreny);
+        $currency = new Currency('openexchange', null, null, null, true);
+        $this->assertNotEmpty($currency);
     }
 
     /**
@@ -142,8 +165,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testConvertOpenExchange() {
-        $curreny = new \danielme85\CConverter\Currency('openexchange', null, null, null, true);
-        $this->assertEquals(1, $curreny->convert('USD', 'USD', 1));
+        $currency = new Currency('openexchange', null, null, null, true);
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
     }
 
     /**
@@ -153,8 +176,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testGetRatesOpenExchange() {
-        $curreny = new \danielme85\CConverter\Currency('openexchange', null, null, null, true);
-        $rates = $curreny->getRates('USD');
+        $currency = new Currency('openexchange', null, null, null, true);
+        $rates = $currency->getRates('USD');
         $this->assertArrayHasKey('rates', $rates);
         $this->assertGreaterThan(0, $this->count($rates['rates']));
     }
