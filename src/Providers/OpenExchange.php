@@ -23,6 +23,14 @@ class OpenExchange extends CurrencyProviders
             return $this->convertFromOpenExchange(json_decode(file_get_contents(dirname(__FILE__). '/../tests/openExchangeTestData.json'), true));
         }
 
+        //A special case for openExchange free version.
+        if (!$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
+            $base = 'USD';
+        }
+        else {
+            $base = $from;
+        }
+
         $base = $this->base;
         $date = $this->date;
 

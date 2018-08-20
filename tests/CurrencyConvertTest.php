@@ -16,15 +16,6 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     }
 
     /**
-     * @group experiment
-     */
-    public function testExperiment() {
-        $currency = new Currency('fixer', null, null, null, true);
-        d($currency->getRates('USD'));
-
-    }
-
-    /**
      * Test of default settings and init
      *
      * @group general
@@ -32,9 +23,18 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      * @return void
      */
     public function testDefaultApi() {
-        $this->assertEquals(1 , Currency::conv('USD', 'USD', 1));
+
+        d(Currency::conv('USD', 'USD', 1));
+        d(Currency::conv('USD', 'NOK', 1));
+
+        //$this->assertEquals(1 , Currency::conv('USD', 'USD', 1));
+        //$this->assertEquals(1 , Currency::conv('EUR', 'EUR', 1));
+        //$this->assertEquals(1 , Currency::conv('NOK', 'NOK', 1));
+
+        /*
         $this->assertNotEmpty(Currency::rates());
         $this->assertNotEmpty(Currency::rates('USD', date('Y-m-d')));
+        */
     }
 
     /**

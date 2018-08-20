@@ -10,39 +10,37 @@ namespace danielme85\CConverter\Providers;
 class Fixer extends BaseProvider implements ProviderInterface
 {
     /**
-     * Get data from fixer
+     *
+     * @param string $currency
+     * @param string|null $date
      *
      * @return array
      */
-    public function rates() {
+    public function rates(string $currency, string $date = null) {
         //use test data if running as test
         if ($this->runastest) {
-            return $this->convert(json_decode(file_get_contents(dirname(__FILE__). '/../../tests/fixerTestData.json'), true));
-        }
-
-        //A special case for greedy fixer.io and their EUR base nonsense for free account.
-        if (!$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'fixer') {
-            $base = 'EUR';
+            $response = file_get_contents(dirname(__FILE__). '/../../tests/fixerTestData.json');
         }
         else {
-            $base = $this->base;
-        }
+            if ($this->settings['use-ssl']) {
+                $url = 'https';
+            } else {
+                $url = 'http';
+            }
+            if (!empty($date)) {
+                $url .= "://data.fixer.io/api/$date?base=$this->baseCurrency";
+            } else {
+                $url .= "://data.fixer.io/api/latest?base=$this->baseCurrency";
+            }
 
-        if ($this->settings['use-ssl']) {
-            $url = 'https';
-        }
-        else {
-            $url = 'http';
-        }
-        if ($this->date and $this->date != '') {
-            $url .= "://data.fixer.io/$this->date?base=$base";
-        }
-        else {
-            $url .= "://data.fixer.io/latest?base=$base";
+            $response = $this->connect($url);
         }
 
 
-        return $this->convert(json_decode($response->getBody(),true));
+        $rates = $this->convert($response);
+        $this->rates = $rates;
+
+        return $this->rates;
     }
 
 
@@ -52,35 +50,28 @@ class Fixer extends BaseProvider implements ProviderInterface
      * @param array $data
      * @return array
      */
-    private function convert($data) {
-        $output = array();
+    private function convert($input) {
+        $data = json_decode($input, true);
+
+        $output['timestamp'] = time();
+        $output['date'] = date('Y-m-d');
+        $output['datetime'] = date('Y-m-d H:i:s');
+        $output['base'] = $data['base'];
+        $output['extra'] = [];
+        $output['rates'] = [];
+
         if (!empty($data)) {
             if (!empty($data['rates'])) {
-                $output['timestamp'] = time();
-                $output['date'] = $data['date'];
-                $this->date = $data['date'];
-
                 foreach ($data['rates'] as $key => $row) {
-                    $output['rates'][$key] = $row;
+                    $newrates[$key] = $row;
                 }
                 //add 1:1 conversion rate from base for testing
-                $output['rates'][$data['base']] = 1;
-            }
-            else {
-                Log::warning('No results returned from Fixer.io');
+                $newrates[$data['base']] = 1;
             }
         }
-        else {
-            if (isset($data['rates']) and is_array($data['rates'])) {
-                $output['rates'] = $data['rates'];
-                $output['timestamp'] = $data['timestamp'];
-            }
-            else {
-                Log::warning('No results returned from Fixer.io');
-            }
-        }
-        $output['base'] = $data['base'];
+        $output['rates'] = $newrates;
 
-        return $output;
+
+        return $this->convertBaseRatesToUSD($output);
     }
 }

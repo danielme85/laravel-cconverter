@@ -10,6 +10,6 @@ namespace danielme85\CConverter\Providers;
 
 interface ProviderInterface
 {
-    public function rates();
+    public function rates(string $currency, string $date = null);
 
 }

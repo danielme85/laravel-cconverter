@@ -27,8 +27,8 @@
 return array (
     
     //API source. 
-    //Possible values: 'openexchange' | 'yahoo' | 'currencylayer' | 'fixer'
-    'api-source' => env('CC_API_SOURCE', 'yahoo'),
+    //Possible values: 'eurocentralbank' | 'openexchange' | 'yahoo' | 'currencylayer' | 'fixer'
+    'api-source' => env('CC_API_SOURCE', 'eurocentralbank'),
 
     //Your app id from openexchangerates.org
     'openex-app-id' =>  env('CC_OPENEXCHANGE_APP_ID', ''),

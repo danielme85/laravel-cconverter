@@ -11,9 +11,8 @@ class Currency
 
     /*retire*/
     public $api;
-    public $settings;
-    public $base = 'USD';
-    public $rates;
+    public $cacheEnabled;
+    public $cacheMinutes;
     public $fromCache = false;
     public $logEnabled = false;
 
@@ -21,7 +20,9 @@ class Currency
      * @var CurrencyProvider
      */
     protected $provider;
-
+    /**
+     * @var bool
+     */
     protected $runastest;
 
     /**
@@ -33,30 +34,32 @@ class Currency
      * @param boolean $runastest Run as test and use json test data in /tests instead of actually http-rest results from API's
      *
      */
-    public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = false) {
-        if (!$this->settings = Config::get('CConverter')) {
+    public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = true) {
+        if (!$settings = Config::get('CConverter')) {
             Log::info('The CConverter.php config file was not found.');
         }
         //Override config/settings with constructor variables if present.
         if (isset($api)) {
-            $this->settings['api-source'] = $api;
+            $settings['api-source'] = $api;
         }
         if (isset($https)) {
-            $this->settings['use-https'] = $https;
+            $settings['use-https'] = $https;
         }
         if (isset($useCache)) {
-            $this->settings['enable-cache'] = $useCache;
+            $settings['enable-cache'] = $useCache;
         }
         if (isset($cacheMin)) {
-            $this->settings['cache-min'] = $cacheMin;
+            $settings['cache-min'] = $cacheMin;
         }
 
-        $this->logEnabled = $this->settings['enable-log'];
-        $this->api = $this->settings['api-source'];
+        $this->logEnabled = $settings['enable-log'];
+        $this->api = $settings['api-source'];
         $this->runastest = $runastest;
+        $this->cacheEnabled = $settings['enable-cache'];
+        $this->cacheMinutes = $settings['cache-min'];
 
-        $this->provider = CurrencyProvider::getProvider($this->api);
-        $this->provider->addSettings($this->settings);
+        $this->provider = CurrencyProvider::loadProvider($this->api);
+        $this->provider->addSettings($settings);
         $this->provider->setTestMode($this->runastest);
     }
 
@@ -67,19 +70,12 @@ class Currency
 
 
 
-    public function getRates($base = null, $date = null) : array
+    public function getRates($base = 'USD', $date = null) : array
     {
         $this->fromCache = false;
         $api = $this->api;
 
-        if (!empty($base)) {
-            $this->base = $base;
-        }
-        else {
-            $this->base = $base;
-        }
-
-        if ($this->settings['enable-cache'] === true) {
+        if ($this->cacheEnabled === true) {
             if ($rates = Cache::get("CConverter$api$base$date")) {
                 $this->fromCache = true;
                 if ($this->logEnabled) {
@@ -89,8 +85,8 @@ class Currency
             else {
                 $rates = $this->provider->rates($base, $date);
                 if ($rates) {
-                    if(Cache::add("CConverter$api$base$date", $rates, $this->settings['cache-min']) and $this->logEnabled) {
-                        Log::debug('Added new currency rates to cache: CConverter'.$api.$base.$date.' - for '.$this->settings['cache-min'].' min.');
+                    if(Cache::add("CConverter$api$base$date", $rates, $this->cacheMinutes) and $this->logEnabled) {
+                        Log::debug('Added new currency rates to cache: CConverter'.$api.$base.$date.' - for '.$this->cacheMinutes.' min.');
                     }
                 }
             }
@@ -99,9 +95,7 @@ class Currency
             $rates = $this->provider->rates($base, $date);
         }
 
-        $this->rates = $rates;
-
-        return $this->rates;
+        return $rates;
     }
 
     /*
@@ -189,7 +183,7 @@ class Currency
     *
     *  @return object returns a GuzzleHttp\Client object.
     */
-    public function getRateSeries($from, $to, $dateStart, $dateEnd) {
+    public function getRateSeriesOLD($from, $to, $dateStart, $dateEnd) {
         $api = $this->settings['api-source'];
         if ($this->settings['enable-cache']) {
             if (Cache::has("CConverter$from$to$dateStart$dateEnd")) {
@@ -256,7 +250,7 @@ class Currency
      *
      * @return float $result
      */
-    public function convert($from, $to, $value, $round = null, $date = null) {
+    public function convertOLD($from, $to, $value, $round = null, $date = null) {
         $result = array();
 
         if ($value === 0 or $value === null or $value === '' or empty($value)) {
@@ -314,6 +308,20 @@ class Currency
         return $result;
     }
 
+    public function convert($from, $to, $value, $round = 2, $date = null) {
+        if (empty($value)) {
+            return 0;
+        }
+
+        $rate = $this->provider->rate($from, $date);
+
+
+        if ($round or $round === 0) {
+            $rate = round($rate, $round);
+        }
+
+        return $rate;
+    }
 
     /**
      * Convert a from one currency to another
@@ -326,7 +334,7 @@ class Currency
      *
      * @return mixed $result
      */
-    public static function conv($from, $to, $int, $round = null, $date = null) {
+    public static function conv($from, $to, $int = 0, $round = null, $date = null) {
         $convert = new self;
         return $convert->convert($from, $to, $int, $round, $date);
     }
@@ -365,10 +373,6 @@ class Currency
      */
 
     public function meta() {
-        return ['settings' =>$this->settings,
-                'url' => $this->requestUrl,
-                'base' => $this->base,
-                'fromCache' => $this->fromCache,
-                'historicalDate' => $this->date];
+        return $this->provider->meta();
     }
 }

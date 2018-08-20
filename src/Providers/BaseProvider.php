@@ -17,9 +17,9 @@ class BaseProvider
     public $toDate;
     public $from;
     public $to;
+    public $baseRates;
 
     protected $settings = [];
-
     protected $runastest = false;
 
     public function setTestMode(bool $runastest)
@@ -32,10 +32,62 @@ class BaseProvider
         $this->settings = $settings;
     }
 
-    function connect($url)
+    protected function connect($url)
     {
         $client = new Client();
-        return $client->get($url);
+        $request = $client->get($url);
+        $response = $request->getBody();
+        return $response;
     }
 
+    protected function convertBaseRatesToCurrency($currency) {
+        if (!empty($this->baseRates)) {
+            $rates = $this->baseRates;
+
+            if ($rates['base'] !== $currency) {
+                if (!empty($rates['rates']) and !empty($rates['rates'][$currency])) {
+                    $usdrate = $rates['rates'][$currency];
+                    $rateseries = $rates['rates'];
+                    foreach ($rateseries as $key => $rate) {
+                        $newrates[$key] = $rate * (1 / $usdrate);
+                    }
+                }
+            }
+        }
+        if (!empty($newrates)) {
+            $rates['rates'] = $newrates;
+            $rates['base'] = $currency;
+        }
+
+        return $rates;
+    }
+
+    protected function convertBaseRatesToUSD() {
+        if (!empty($this->baseRates)) {
+            $rates = $this->baseRates;
+            if ($rates['base'] !== 'USD') {
+                if (!empty($rates['rates']) and !empty($rates['rates']['USD'])) {
+                    $usdrate = $rates['rates']['USD'];
+                    $rateseries = $rates['rates'];
+                    foreach ($rateseries as $key => $rate) {
+                        $newrates[$key] = $rate * (1 / $usdrate);
+                    }
+                }
+            }
+        }
+        if (!empty($newrates)) {
+            $rates['rates'] = $newrates;
+            $rates['base'] = 'USD';
+        }
+
+        $this->baseRates = $rates;
+    }
+
+    public function meta() {
+        return ['settings' => $this->settings,
+            'url' => $this->requestUrl,
+            'base' => $this->base,
+            'fromCache' => $this->fromCache,
+            'historicalDate' => $this->date];
+    }
 }
