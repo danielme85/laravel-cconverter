@@ -18,18 +18,16 @@ class BaseProvider
     public $from;
     public $to;
     public $baseRates;
+    public $api;
+    public $logEnabled = false;
 
-    protected $settings = [];
     protected $runastest = false;
 
-    public function setTestMode(bool $runastest)
+    public function __construct($settings)
     {
-        $this->runastest = $runastest;
-    }
-
-    public function addSettings(array $settings)
-    {
-        $this->settings = $settings;
+        $this->api = $settings['api-source'];
+        $this->logEnabled = $settings['enable-log'];
+        $this->runastest = $settings['runastest'];
     }
 
     protected function connect($url)
@@ -83,11 +81,4 @@ class BaseProvider
         $this->baseRates = $rates;
     }
 
-    public function meta() {
-        return ['settings' => $this->settings,
-            'url' => $this->requestUrl,
-            'base' => $this->base,
-            'fromCache' => $this->fromCache,
-            'historicalDate' => $this->date];
-    }
 }

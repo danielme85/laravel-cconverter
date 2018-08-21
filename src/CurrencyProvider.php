@@ -15,51 +15,31 @@ use danielme85\CConverter\Providers\Yahoo;
 class CurrencyProvider
 {
 
-    public static function loadProvider($apiSource)
+    /**
+     * @param string $apiSource 'eurocentralbank'|'openexchange'|'yahoo'|'currencylayer'|'fixer'
+     * @param array $settings
+     * @return CurrencyLayer|EuropeanCentralBank|Fixer|OpenExchange|Yahoo
+     * @throws \Exception
+     */
+    public static function getProvider($apiSource, $settings)
     {
-        $providerCache = new CurrencyProviderCache();
-
         if ($apiSource === 'eurocentralbank') {
-            if (!empty($instance = $providerCache->getInstance($apiSource))) {
-                if (get_class($instance) === 'EuropeanCentralBank') {
-                    return $instance;
-                }
-            }
-            $instance = new EuropeanCentralBank();
-            $providerCache->setInstance($apiSource, $instance);
-            return $instance;
+            return new EuropeanCentralBank($settings);
         }
-        else if ($apiSource=== 'yahoo') {
-            if (!empty($providerCache)) {
-                if (get_class($this->providerCache) === 'Yahoo') {
-                    return $this->providerCache;
-                }
-            }
-            return new Yahoo();
+        else if ($apiSource === 'yahoo') {
+            return new Yahoo($settings);
         }
         else if ($apiSource === 'openexchange') {
-            if (!empty($providerCache)) {
-                if (get_class($this->providerCache) === 'OpenExchange') {
-                    return $this->providerCache;
-                }
-            }
-            return new OpenExchange();
+            return new OpenExchange($settings);
         }
         else if ($apiSource === 'currencylayer') {
-            if (!empty($providerCache)) {
-                if (get_class($this->providerCache) === 'CurrencyLayer') {
-                    return $this->providerCache;
-                }
-            }
-            return new CurrencyLayer();
+            return new CurrencyLayer($settings);
         }
         else if ($apiSource === 'fixer') {
-            if (!empty($providerCache)) {
-                if (get_class($this->providerCache) === 'Fixer') {
-                    return $this->providerCache;
-                }
-            }
-            return new Fixer();
+            return new Fixer($settings);
+        }
+        else {
+            throw new \Exception("No suitable data provider found for Currency Converter", 500);
         }
     }
 

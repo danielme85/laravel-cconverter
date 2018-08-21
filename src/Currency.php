@@ -8,22 +8,12 @@ use Illuminate\Support\Facades\Log;
 
 class Currency
 {
-
-    /*retire*/
     public $api;
     public $cacheEnabled;
     public $cacheMinutes;
     public $fromCache = false;
-    public $logEnabled = false;
 
-    /**
-     * @var CurrencyProvider
-     */
     protected $provider;
-    /**
-     * @var bool
-     */
-    protected $runastest;
 
     /**
      *
@@ -34,7 +24,7 @@ class Currency
      * @param boolean $runastest Run as test and use json test data in /tests instead of actually http-rest results from API's
      *
      */
-    public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = true) {
+    public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = false) {
         if (!$settings = Config::get('CConverter')) {
             Log::info('The CConverter.php config file was not found.');
         }
@@ -51,24 +41,20 @@ class Currency
         if (isset($cacheMin)) {
             $settings['cache-min'] = $cacheMin;
         }
+        if (isset($runastest)) {
+            $settings['runastest'] = $runastest;
+        }
 
-        $this->logEnabled = $settings['enable-log'];
         $this->api = $settings['api-source'];
-        $this->runastest = $runastest;
         $this->cacheEnabled = $settings['enable-cache'];
         $this->cacheMinutes = $settings['cache-min'];
 
-        $this->provider = CurrencyProvider::loadProvider($this->api);
-        $this->provider->addSettings($settings);
-        $this->provider->setTestMode($this->runastest);
+        try {
+            $this->provider = CurrencyProvider::getProvider($this->api, $settings);
+        } catch (\Exception $e) {
+
+        }
     }
-
-    public function provider() : CurrencyProvider
-    {
-        return $this->provider;
-    }
-
-
 
     public function getRates($base = 'USD', $date = null) : array
     {
@@ -97,6 +83,7 @@ class Currency
 
         return $rates;
     }
+
 
     /*
      * Get the current rates.

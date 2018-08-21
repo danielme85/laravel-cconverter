@@ -18,18 +18,15 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     /**
      * Test of default settings and init
      *
-     * @group general
+     * @group general;
      *
      * @return void
      */
     public function testDefaultApi() {
+        $currency = new Currency(null, null, null, null, true);
+        $rates = $currency->getRates();
+        d($rates);
 
-        d(Currency::conv('USD', 'USD', 1));
-        d(Currency::conv('USD', 'NOK', 1));
-
-        //$this->assertEquals(1 , Currency::conv('USD', 'USD', 1));
-        //$this->assertEquals(1 , Currency::conv('EUR', 'EUR', 1));
-        //$this->assertEquals(1 , Currency::conv('NOK', 'NOK', 1));
 
         /*
         $this->assertNotEmpty(Currency::rates());
