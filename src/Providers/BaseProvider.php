@@ -8,23 +8,26 @@
 namespace danielme85\CConverter\Providers;
 
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Log;
 
 class BaseProvider
 {
     public $base;
-    public $date;
     public $fromDate;
     public $toDate;
     public $from;
     public $to;
     public $baseRates;
+    public $baseRatesDate;
     public $api;
     public $logEnabled = false;
 
     protected $runastest = false;
+    protected $settings;
 
     public function __construct($settings)
     {
+        $this->settings = $settings;
         $this->api = $settings['api-source'];
         $this->logEnabled = $settings['enable-log'];
         $this->runastest = $settings['runastest'];

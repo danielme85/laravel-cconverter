@@ -12,6 +12,7 @@ class Currency
     public $cacheEnabled;
     public $cacheMinutes;
     public $fromCache = false;
+    public $logEnabled = false;
 
     protected $provider;
 
@@ -41,13 +42,12 @@ class Currency
         if (isset($cacheMin)) {
             $settings['cache-min'] = $cacheMin;
         }
-        if (isset($runastest)) {
-            $settings['runastest'] = $runastest;
-        }
 
+        $settings['runastest'] = $runastest;
         $this->api = $settings['api-source'];
         $this->cacheEnabled = $settings['enable-cache'];
         $this->cacheMinutes = $settings['cache-min'];
+        $this->logEnabled = $settings['enable-log'];
 
         try {
             $this->provider = CurrencyProvider::getProvider($this->api, $settings);
@@ -56,8 +56,12 @@ class Currency
         }
     }
 
-    public function getRates($base = 'USD', $date = null) : array
+    public function getRates($base = null, $date = null) : array
     {
+        $base = strtoupper($base);
+        if (empty($base)) {
+            $base = 'USD';
+        }
         $this->fromCache = false;
         $api = $this->api;
 
@@ -296,18 +300,43 @@ class Currency
     }
 
     public function convert($from, $to, $value, $round = 2, $date = null) {
+        $result = 0;
+        $from = strtoupper($from);
+        $to = strtoupper($to);
+
         if (empty($value)) {
-            return 0;
+            return $result;
         }
 
-        $rate = $this->provider->rate($from, $date);
+        $provider = $this->provider->rates($from, $date);
+
+        if (!empty($provider['rates'])) {
+            $rates = $provider['rates'];
+            if (!array_key_exists($to, $rates)) {
+                Log::warning("The currency $to does not exist for the provider $this->provider->name ");
+                return $result;
+            }
+
+            if ($from === 'USD') {
+                //All currencies are stored in the model has USD as base currency
+                $result = $rates[$to];
+            }
+            else {
+                //Convert Currencies via USD
+                $result = $rates[$to] * ($value/$rates[$from]);
+            }
 
 
-        if ($round or $round === 0) {
-            $rate = round($rate, $round);
+
+
+            if ($round or $round === 0) {
+                $result = round($result, $round);
+            }
         }
-
-        return $rate;
+        else {
+            //no rates
+        }
+        return $result;
     }
 
     /**
@@ -318,11 +347,16 @@ class Currency
      * @param mixed $int calculate from this number
      * @param integer $round round this this number of desimals.
      * @param string $date date for historical data
+     * @param string $api override Provider setting
+     * @param bool $https override https setting
+     * @param bool $useCache override cache setting
+     * @param int $cacheMin override cache setting
+     * @param bool $runastest for testing, uses local test data.
      *
      * @return mixed $result
      */
-    public static function conv($from, $to, $int = 0, $round = null, $date = null) {
-        $convert = new self;
+    public static function conv($from, $to, $int = 0, $round = null, $date = null, $api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = false) {
+        $convert = new self($api, $https, $useCache, $cacheMin, $runastest);
         return $convert->convert($from, $to, $int, $round, $date);
     }
 
@@ -332,10 +366,16 @@ class Currency
      *
      * @param null $base
      * @param null $date
+     * @param string $api override Provider setting
+     * @param bool $https override https setting
+     * @param bool $useCache override cache setting
+     * @param int $cacheMin override cache setting
+     * @param bool $runastest for testing, uses local test data.
+     *
      * @return array
      */
-    public static function rates($base = null, $date = null) {
-        $rates = new self;
+    public static function rates($base = null, $date = null, $api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = false) {
+        $rates = new self($api, $https, $useCache, $cacheMin, $runastest);
         return $rates->getRates($base, $date);
     }
 

@@ -17,22 +17,53 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
 
     /**
      * Test of default settings and init
-     *
-     * @group general;
+     * @group test
      *
      * @return void
      */
     public function testDefaultApi() {
         $currency = new Currency(null, null, null, null, true);
+
         $rates = $currency->getRates();
-        d($rates);
+        $this->assertNotEmpty($rates);
+        $this->assertEquals(1, $rates['rates']['USD']);
 
-
-        /*
-        $this->assertNotEmpty(Currency::rates());
-        $this->assertNotEmpty(Currency::rates('USD', date('Y-m-d')));
-        */
+        $this->assertEquals(8.47, $currency->convert('USD', 'NOK', 1));
+        $this->assertEquals(0.88, $currency->convert('USD', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
     }
+
+    /**
+     * @group short
+     *
+     */
+    public function testStaticShortCalls() {
+
+        $usrates = Currency::rates(null, null, null, null, null, null, true);
+        $this->assertEquals(1, $usrates['rates']['USD']);
+
+        $eurorates = Currency::rates('EUR', null, null, null, null, null, true);
+        $this->assertEquals(1, $eurorates['rates']['EUR']);
+
+    }
+
+    /**
+     * Test to see if the Currency object can be created with The European Central Bank
+     * @group eurobank
+     *
+     * @return void
+     */
+    public function testEuroBank()
+    {
+        $currency = new Currency('eurocentralbank', null, null, null, true);
+        $this->assertNotEmpty($currency->getRates());
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+
+    }
+
 
     /**
      * Test to see if the Currency object can be created with fixer.
@@ -40,36 +71,14 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
      *
      * @return void
      */
-    public function testCreateInstanceFixer()
+    public function testFixer()
     {
         $currency = new Currency('fixer', null, null, null, true);
-        $this->assertNotEmpty($currency);
-    }
-
-    /**
-     * Test Currency conversion default config with fixer.io as source.
-     * @group fixer
-     *
-     * @return void
-     */
-    public function testConvertFixer() {
-        $currency = new Currency('fixer', null, null, null, true);
+        $this->assertNotEmpty($currency->getRates());
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
     }
 
-
-    /**
-     * Test getting Currency rates with fixer.io as source.
-     * @group fixer
-     *
-     * @return void
-     */
-    public function testGetRatesFixer() {
-        $currency = new Currency('fixer', null, null, null, true);
-        $rates = $currency->getRates('USD');
-        $this->assertArrayHasKey('rates', $rates);
-        $this->assertGreaterThan(0, $this->count($rates['rates']));
-    }
 
     /**
      * Test to see if the Currency object can be created with CurrencyLayer.

@@ -7,31 +7,12 @@ namespace danielme85\CConverter\Providers;
 class EuropeanCentralBank extends BaseProvider
 {
 
-    public function rate(string $currency, string $date = null) {
-        $currency = strtoupper($currency);
-        if (empty($this->baseRates) or $this->baseRates['date'] !== $date) {
-            $this->download($date);
-        }
-
-        //Rates are stored in USD
-        if ($currency === 'USD') {
-            if (isset($this->baseRates['rates'][$currency])) {
-                return $this->baseRates['rates'][$currency];
-            }
-        }
-        else {
-            $rate = $this->baseRates['rates'][$currency];
-            $usdrate = $this->baseRates['rates'][$currency];
-
-            return $rate * (1 / $usdrate);
-        }
-
-        return 0;
-    }
+    public $name = 'The European Central Bank';
 
     public function rates(string $currency, string $date = null) {
-        if (empty($this->baseRates) or $this->baseRates['date'] !== $date) {
+        if (empty($this->baseRates) or $this->baseRatesDate !== $date) {
            $this->download($date);
+            $this->baseRatesDate = $date;
         }
 
         //Rates are stored in USD
@@ -45,9 +26,9 @@ class EuropeanCentralBank extends BaseProvider
 
 
     private function download($fromdate = null, $todate = null) {
-        d("DOWNLOAD CALLED");
         //use test data if running as test
         if ($this->runastest) {
+            echo "Getting test data file for EuroBank...\n";
             $response = file_get_contents(dirname(__FILE__). '/../../tests/europeanCentralBankTestData.json');
         }
         else {
@@ -67,8 +48,7 @@ class EuropeanCentralBank extends BaseProvider
             $response = $this->connect($url);
         }
 
-        $baseRates = $this->convert($response);
-        $this->baseRates = $baseRates;
+        $this->baseRates = $this->convert($response);;
         $this->convertBaseRatesToUSD();
     }
 
@@ -81,9 +61,11 @@ class EuropeanCentralBank extends BaseProvider
         $series = end($data['dataSets']);
         $structure = $data['structure']['dimensions']['series'];
 
+        $time = strtotime($series['validFrom']);
+
         $output['timestamp'] = time();
-        $output['date'] = date('Y-m-d');
-        $output['datetime'] = date('Y-m-d H:i:s');
+        $output['date'] = date('Y-m-d', $time);
+        $output['datetime'] = date('Y-m-d H:i:s', $time);
         $output['base'] = 'EUR';
         $output['extra'] = ['european_central_bank_valid_from' => $series['validFrom']];
         $output['rates'] = [];

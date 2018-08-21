@@ -9,6 +9,28 @@ namespace danielme85\CConverter\Providers;
 
 class Fixer extends BaseProvider implements ProviderInterface
 {
+    public $name = "Fixer.io";
+
+    public function rates(string $currency, string $date = null) {
+        if (empty($this->baseRates) or $this->baseRatesDate !== $date) {
+            if ($this->settings['fixer-use-real-base']) {
+                $this->download($currency, $date);
+            }
+            else {
+                $this->download('EUR', $date);
+            }
+
+            $this->baseRatesDate = $date;
+        }
+
+        //Rates are stored in USD
+        if ($currency === 'USD') {
+            return $this->baseRates;
+        }
+        else {
+            return $this->convertBaseRatesToCurrency($currency);
+        }
+    }
     /**
      *
      * @param string $currency
@@ -16,7 +38,7 @@ class Fixer extends BaseProvider implements ProviderInterface
      *
      * @return array
      */
-    public function rates(string $currency, string $date = null) {
+    public function download(string $currency, string $date = null) {
         //use test data if running as test
         if ($this->runastest) {
             $response = file_get_contents(dirname(__FILE__). '/../../tests/fixerTestData.json');
@@ -28,19 +50,16 @@ class Fixer extends BaseProvider implements ProviderInterface
                 $url = 'http';
             }
             if (!empty($date)) {
-                $url .= "://data.fixer.io/api/$date?base=$this->baseCurrency";
+                $url .= "://data.fixer.io/api/$date?base=EUR";
             } else {
-                $url .= "://data.fixer.io/api/latest?base=$this->baseCurrency";
+                $url .= "://data.fixer.io/api/latest?base=EUR";
             }
 
             $response = $this->connect($url);
         }
 
-
-        $rates = $this->convert($response);
-        $this->rates = $rates;
-
-        return $this->rates;
+        $this->baseRates = $this->convert($response);;
+        $this->convertBaseRatesToUSD();
     }
 
 
@@ -53,9 +72,11 @@ class Fixer extends BaseProvider implements ProviderInterface
     private function convert($input) {
         $data = json_decode($input, true);
 
+        $time = strtotime($data['date']);
+
         $output['timestamp'] = time();
-        $output['date'] = date('Y-m-d');
-        $output['datetime'] = date('Y-m-d H:i:s');
+        $output['date'] = date('Y-m-d', $time);
+        $output['datetime'] = date('Y-m-d H:i:s', $time);
         $output['base'] = $data['base'];
         $output['extra'] = [];
         $output['rates'] = [];
@@ -72,6 +93,6 @@ class Fixer extends BaseProvider implements ProviderInterface
         $output['rates'] = $newrates;
 
 
-        return $this->convertBaseRatesToUSD($output);
+        return $output;
     }
 }
