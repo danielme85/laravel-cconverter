@@ -7,88 +7,123 @@
 
 namespace danielme85\CConverter\Providers;
 
-use danielme85\CConverter\CurrencyProviders;
+use Illuminate\Support\Facades\Log;
 
-class OpenExchange extends CurrencyProviders
+class OpenExchange extends BaseProvider implements ProviderInterface
 {
+    public $name = 'Open Exchange Rates';
+
+    /**
+     * Get the rates from this provider.
+     *
+     * @param string $currency
+     * @param string $date
+     *
+     * @return array
+     */
+    public function rates(string $currency, string $date): array
+    {
+        $results = [];
+        $rates = $this->getBaseRates($currency, $date);
+        if (empty($rates)) {
+            $rates = $this->convert($this->download($date));
+            if ($currency !== 'EUR') {
+                //Set USD base rate
+                $this->setBaseRates($rates->convertBaseRatesToUSD());
+
+                if ($currency !== 'USD') {
+                    $rates = $rates->convertBaseRateToCurrency($currency);
+                    $this->setBaseRates($rates);
+                }
+            } else {
+                $this->setBaseRates($rates);
+            }
+        }
+
+        if (isset($rates->rates)) {
+            $results = $rates->rates;
+        }
+
+        return $results;
+    }
 
     /**
      * Get data from openExchange
      *
      * @return array
      */
-    protected function connect() {
+    private function download($currency, $fromDate = null, $toDate = null)
+    {
         //use test data if running as test
         if ($this->runastest) {
-            return $this->convertFromOpenExchange(json_decode(file_get_contents(dirname(__FILE__). '/../tests/openExchangeTestData.json'), true));
-        }
-
-        //A special case for openExchange free version.
-        if (!$this->settings['openex-use-real-base'] and $this->settings['api-source'] === 'openexchange') {
-            $base = 'USD';
+            $results = file_get_contents(dirname(__FILE__) . '/../../tests/openExchangeTestData.json');
         }
         else {
-            $base = $from;
+            //A special case for openExchange free version.
+            if (!$this->settings['openex-use-real-base']) {
+                $base = 'USD';
+            } else {
+                $base = $currency;
+            }
+
+            if ($this->settings['use-ssl']) {
+                $url = 'https';
+            } else {
+                $url = 'http';
+            }
+
+            if (!empty($fromDate) and !empty($toDate)) {
+                $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] . '&start=' . $fromDate . '&end=' . $toDate . '&base=' . $base;
+            } else {
+                $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] . '&base=' . $base;
+            }
+
+            $results = $this->connect($url);
         }
 
-        $base = $this->base;
-        $date = $this->date;
-
-        if ($this->settings['use-ssl']) {
-            $url = 'https';
-        }
-        else {
-            $url = 'http';
-        }
-
-        if (isset($date)) {
-            $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] .'&start='.$date.'&end='.$date.'&base='.$base;
-        }
-        else {
-            $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] .'&base='.$base;
-        }
-
-        $this->requestUrl = $url;
-
-        $client = new Client();
-        $response = $client->get($url);
-
-        return $this->convert(json_decode($response->getBody(),true));
+        return $results;
     }
 
     /**
      * Convert data from from OpenExchangeRate to standardized format.
      * @param $data
-     * @return array
+     *
+     * @return Rates
      */
-    protected function convert($data) {
-        $date = $this->date;
-        $output = array();
+    protected function convert($input, $date = null) : Rates
+    {
+        $data = json_decode($input, true);
+        if (!empty($data)) {
 
-        if (isset($date)) {
-            if (isset($data['rates'][$date]) and is_array($data['rates'][$date])) {
-                foreach ($data['rates'][$date] as $key => $row) {
-                    $output['rates'][$key] = $row;
-                    $output['timestamp'] = strtotime($date);
+            $time = $data['timestamp'];
+
+            $rates = new Rates();
+            $rates->timestamp = time();
+            $rates->date = date('Y-m-d', $time);
+            $rates->datetime = date('Y-m-d H:i:s', $time);
+            $rates->base = strtoupper($data['base']);
+            $rates->extra = [];
+            $rates->rates = [];
+
+            if (!empty($date)) {
+                if (isset($data['rates'][$date]) and is_array($data['rates'][$date])) {
+                    foreach ($data['rates'][$date] as $key => $row) {
+                        $rates->rates[$key] = $row;
+                    }
+                } else {
+                    Log::warning('No results returned from OpenExchange.');
+                }
+            } else {
+                if (isset($data['rates']) and is_array($data['rates'])) {
+                    $rates->rates = $data['rates'];
+                } else {
+                    Log::warning('No results returned from OpenExchange.');
                 }
             }
-            else {
-                Log::warning('No results returned from OpenExchange.');
-            }
-        }
-        else {
-            if (isset($data['rates']) and is_array($data['rates'])) {
-                $output['rates'] = $data['rates'];
-                $output['timestamp'] = $data['timestamp'];
-            }
-            else {
-                Log::warning('No results returned from OpenExchange.');
-            }
+
         }
 
-        $output['base'] = $data['base'];
-
-        return $output;
+        return $rates;
     }
 
 }

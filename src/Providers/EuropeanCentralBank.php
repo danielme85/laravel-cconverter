@@ -3,32 +3,62 @@
 
 namespace danielme85\CConverter\Providers;
 
-
-class EuropeanCentralBank extends BaseProvider
+/**
+ * Class EuropeanCentralBank
+ *
+ * @package danielme85\CConverter\Providers
+ */
+class EuropeanCentralBank extends BaseProvider implements ProviderInterface
 {
 
     public $name = 'The European Central Bank';
 
-    public function rates(string $currency, string $date = null) {
-        if (empty($this->baseRates) or $this->baseRatesDate !== $date) {
-           $this->download($date);
-            $this->baseRatesDate = $date;
+    /**
+     * Get the rates from this provider.
+     *
+     * @param string $currency
+     * @param string $date
+     *
+     * @return array
+     */
+    public function rates(string $currency, string $date) : array
+    {
+        $results = [];
+        $rates = $this->getBaseRates($currency, $date);
+        if (empty($rates)) {
+            $rates = $this->convert($this->download($date));
+            if ($currency !== 'EUR') {
+                //Set USD base rate
+                $this->setBaseRates($rates->convertBaseRatesToUSD());
+
+                if ($currency !== 'USD') {
+                    $rates = $rates->convertBaseRateToCurrency($currency);
+                    $this->setBaseRates($rates);
+                }
+            }
+            else {
+                $this->setBaseRates($rates);
+            }
         }
 
-        //Rates are stored in USD
-        if ($currency === 'USD') {
-            return $this->baseRates;
+        if (isset($rates->rates)) {
+            $results = $rates->rates;
         }
-        else {
-            return $this->convertBaseRatesToCurrency($currency);
-        }
+
+        return $results;
     }
 
-
-    private function download($fromdate = null, $todate = null) {
+    /**
+     * Download new data
+     *
+     * @param null|string $date
+     *
+     * @return mixed
+     */
+    private function download($date = null)
+    {
         //use test data if running as test
         if ($this->runastest) {
-            echo "Getting test data file for EuroBank...\n";
             $response = file_get_contents(dirname(__FILE__). '/../../tests/europeanCentralBankTestData.json');
         }
         else {
@@ -37,38 +67,44 @@ class EuropeanCentralBank extends BaseProvider
             } else {
                 $url = 'http';
             }
-            if (!empty($fromdate)) {
-                $fromdate = date('Y-m-d');
+            if (!empty($date)) {
+                $date = date('Y-m-d');
             }
-            if (!empty($todate)) {
-                $todate = date('Y-m-d');
-            }
-            $url .= "://sdw-wsrest.ecb.europa.eu/service/data/EXR/D..EUR.SP00.A?startPeriod=$fromdate&endPeriod=$todate&detail=dataonly";
+            $url .= "://sdw-wsrest.ecb.europa.eu/service/data/EXR/D..EUR.SP00.A?startPeriod=$date&endPeriod=$date&detail=dataonly";
 
-            $response = $this->connect($url);
+            $response = $this->connect($url, [
+                'Accept' => 'application/vnd.sdmx.data+json;version=1.0.0-wd',
+                'Accept-Encoding' => 'gzip'
+            ]);
         }
 
-        $this->baseRates = $this->convert($response);;
-        $this->convertBaseRatesToUSD();
+        return $response;
     }
+
 
     /**
      * Convert data from fixer.io to standardized format.
+     * @param $input
      *
+     * @return Rates
      */
-    private function convert($input) {
+    private function convert($input) : Rates
+    {
         $data = json_decode($input, true);
         $series = end($data['dataSets']);
         $structure = $data['structure']['dimensions']['series'];
 
         $time = strtotime($series['validFrom']);
 
-        $output['timestamp'] = time();
-        $output['date'] = date('Y-m-d', $time);
-        $output['datetime'] = date('Y-m-d H:i:s', $time);
-        $output['base'] = 'EUR';
-        $output['extra'] = ['european_central_bank_valid_from' => $series['validFrom']];
-        $output['rates'] = [];
+        $rates = new Rates();
+        $rates->timestamp = time();
+        $rates->date = date('Y-m-d', $time);
+        $rates->datetime = date('Y-m-d H:i:s', $time);
+        $rates->base = 'EUR';
+        $rates->extra = ['european_central_bank_valid_from' => $series['validFrom']];
+        $rates->rates = [];
+
+        $newrates = [];
 
         if (!empty($structure)) {
             foreach ($structure as $struc) {
@@ -100,12 +136,12 @@ class EuropeanCentralBank extends BaseProvider
 
         if (!empty($labels) and !empty($newrates)) {
             foreach ($labels as $i => $label) {
-                $output['rates'][$label] = $newrates[$i];
+                $rates->rates[$label] = $newrates[$i];
             }
             //add 1:1 conversion rate from base for testing
-            $output['rates']['EUR'] = 1;
+            $rates->rates['EUR'] = 1;
         }
 
-        return $output;
+        return $rates;
     }
 }

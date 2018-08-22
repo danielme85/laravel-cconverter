@@ -11,6 +11,7 @@ use danielme85\CConverter\Providers\EuropeanCentralBank;
 use danielme85\CConverter\Providers\Fixer;
 use danielme85\CConverter\Providers\OpenExchange;
 use danielme85\CConverter\Providers\Yahoo;
+use danielme85\CConverter\Providers\CurrencyLayer;
 
 class CurrencyProvider
 {

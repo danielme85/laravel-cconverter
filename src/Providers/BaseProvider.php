@@ -12,19 +12,20 @@ use Illuminate\Support\Facades\Log;
 
 class BaseProvider
 {
-    public $base;
-    public $fromDate;
-    public $toDate;
-    public $from;
-    public $to;
-    public $baseRates;
-    public $baseRatesDate;
     public $api;
-    public $logEnabled = false;
+    public $logEnabled;
 
-    protected $runastest = false;
+    protected $baseRates;
+    protected $baseRateSeries;
+
+    protected $runastest;
     protected $settings;
 
+    /**
+     * BaseProvider constructor.
+     *
+     * @param array $settings
+     */
     public function __construct($settings)
     {
         $this->settings = $settings;
@@ -33,55 +34,86 @@ class BaseProvider
         $this->runastest = $settings['runastest'];
     }
 
-    protected function connect($url)
+    /**
+     * Connect to the providers API
+     *
+     * @param string $url
+     * @param array $headers
+     *
+     * @return \Psr\Http\Message\StreamInterface
+     */
+    protected function connect($url, $headers = null)
     {
-        $client = new Client();
+        if (!empty($headers)) {
+            $client = new Client(['headers' => $headers]);
+
+        }
+        else {
+            $client = new Client();
+
+        }
         $request = $client->get($url);
         $response = $request->getBody();
+
         return $response;
     }
 
-    protected function convertBaseRatesToCurrency($currency) {
-        if (!empty($this->baseRates)) {
-            $rates = $this->baseRates;
+    /**
+     * Set rates
+     *
+     * @param Rates $rates
+     *
+     * @return bool
+     */
+    protected function setBaseRates(Rates $rates) : bool
+    {
+        if (!empty($rates)) {
+            if (isset($rates->base) and isset($rates->date)) {
+                $this->baseRates[$rates->base][$rates->date] = $rates;
 
-            if ($rates['base'] !== $currency) {
-                if (!empty($rates['rates']) and !empty($rates['rates'][$currency])) {
-                    $usdrate = $rates['rates'][$currency];
-                    $rateseries = $rates['rates'];
-                    foreach ($rateseries as $key => $rate) {
-                        $newrates[$key] = $rate * (1 / $usdrate);
-                    }
+                if (!empty($this->baseRates[$rates->base][$rates->date])) {
+                    return true;
                 }
             }
         }
-        if (!empty($newrates)) {
-            $rates['rates'] = $newrates;
-            $rates['base'] = $currency;
-        }
 
-        return $rates;
+        return false;
     }
 
-    protected function convertBaseRatesToUSD() {
-        if (!empty($this->baseRates)) {
-            $rates = $this->baseRates;
-            if ($rates['base'] !== 'USD') {
-                if (!empty($rates['rates']) and !empty($rates['rates']['USD'])) {
-                    $usdrate = $rates['rates']['USD'];
-                    $rateseries = $rates['rates'];
-                    foreach ($rateseries as $key => $rate) {
-                        $newrates[$key] = $rate * (1 / $usdrate);
-                    }
-                }
-            }
-        }
-        if (!empty($newrates)) {
-            $rates['rates'] = $newrates;
-            $rates['base'] = 'USD';
+    /**
+     * Get rates
+     *
+     * @param string $currency
+     * @param $date
+     *
+     * @return Rates|null
+     */
+    protected function getBaseRates(string $currency, $date)
+    {
+        if (isset($this->baseRates[strtoupper($currency)][$date])) {
+
+            return $this->baseRates[strtoupper($currency)][$date];
         }
 
-        $this->baseRates = $rates;
+        return null;
+    }
+
+    /**
+     * Get rate series
+     *
+     * @param string $currency
+     * @param $date
+     *
+     * @return Rates|null
+     */
+    protected function getBaseRateSeries(string $currency)
+    {
+        if (isset($this->baseRates[strtoupper($currency)])) {
+
+            return $this->baseRates[strtoupper($currency)];
+        }
+
+        return null;
     }
 
 }

@@ -8,20 +8,15 @@
 Example usage: <a href="https://danielmellum.com/projects/currency-converter" target="_blank">https://danielmellum.com/projects/currency-converter</a>
 </p>
 <p>
-If you are having composer requirement issues using the latest release or dev-master with Laravel v5.4 and below, try the v0.0.7 release.
-
-```
-composer require danielme85/laravel-cconverter@v0.0.7
-```  
+If you are having composer requirement issues using the latest release and aravel v5.4 and below, try the v0.0.7 release.
 </p>
 
 Version testing and requirements
 
 | Version        | Tested with   | Requires Min |
 | :----------:   |:-------------:| :-----------:|
+| v1.0.0         | Laravel 5.6   | Laravel 5.5  |
 | v0.2.0         | Laravel 5.6   | Laravel 5.5  |
-| v0.1.0         | Laravel 5.5   | Laravel 5.5  |    
-| v0.0.7         | Laravel 5.5   | Laravel 5.4  |    
 | v0.0.6         | Laravel 5.4   | Laravel 5.3  |  
 
 <p>
@@ -44,38 +39,19 @@ or include under require in composer.json
 ```
 "danielme85/laravel-cconverter": "dev-master"
 ```
-
-And like always slap a line in your config\app.php under Service Providers
-<br>*(If you use Laravel 5.5+ you could skip this step as Autodiscovery has been enabled for this package.)*
-```
-danielme85\CConverter\CConverterServiceProvider::class,
-```
-
-If you want a Class alias add the Facade in the same config file under Class Aliases (Currency is used in this example but you can name it whatever you want)
-<br>*(If you use Laravel 5.5+ you could skip this step as Autodiscovery has been enabled for this package.)*
-```
-'Currency'  => danielme85\CConverter\CConverter::class,
-```
-
-You need to publish the config file with the artisan command:
-```
-php artisan vendor:publish
-```
-or publish vendor config file for this plug-in only (probably cleaner).
-```
-php artisan vendor:publish --provider="danielme85\CConverter\CConverterServiceProvider"
-```
 Check the new config\CConverter.php file.
 Cache is enabled per default to 60min. I recommend keeping cache enabled (per default in Laravel 5 this is file cache), expecially when using free sources, this will reduce the traffic load on these community sources.
 When doing multiple conversion at the same time from the same currency the base rate will be loaded into the model (as long as you use the same model instance).   
- 
+
+### Configuration 
+You publish this vendor config file to make changes to the default config.
+```
+php artisan vendor:publish --provider="danielme85\CConverter\CConverterServiceProvider"
+```
 
 ### Usage
-
+There are static class "shortcuts" to convert or get one-time Currency series. 
 ```php
-use danielme85\CConverter\Currency;
-
-
 //To convert a value
 $valueNOK = Currency::conv($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2);
 
@@ -94,40 +70,58 @@ $rates = Currency::rates('NOK', '2014-12-24');
 $rates = Currency::rateSeries('USD', 'NOK', '2016-12-24', ''2016-12-31);
 ```
 
-You can override the settings if/when you create a new instance.
-```php
-$currency = new Currency($api = 'yahoo', $https = false, $useCache = false, $cacheMin = 0);
-```
+I would highly recommend creating a model instance and the non-static functions getRates() & convert() when doing 
+multiple conversion or getting multiple currency series for the best performance. The currency rates are stored 
+in the provider model by date/base-currency for quick and easy access. 
 
-Use the same model instance and the non-static internal convert() function when doing multiple conversion for the best performance.
-(a lot faster when converting multiple values).
 ```php
 $currency = new Currency();
-$values = array (many many values).
+$values = [1, 3, 4, 5...].
 foreach ($values as $value) {
     $valueNOK = $currency->convert($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2);
 }
+
+$rates = $currency->getRates('NOK');
+foreach ($rates as $rate) {
+    $value = $valueNOK * $rate;
+}
 ```
 
-Information about the current Currency object is provided by the meta() function.
+You can override the settings if you create a new instance.
 ```php
-$currency = new Currency();
+$currency = new Currency(
+    $api = 'yahoo', 
+    $https = false, 
+    $useCache = false, 
+    $cacheMin = 0);
 ...
-$info = $currency->meta();
+$result = Currency:conv(
+    $from = 'USD', 
+    $to = 'NOK', 
+    $value = 10, 
+    $decimals = 2, 
+    $date = '2014-12-24', 
+    $api = 'yahoo', 
+    $https = false, 
+    $useCache = false, 
+    $cacheMin = 0);
 ```
+
 
 
 
 Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.org/wiki/ISO_4217
 
 ### Supported functions per API
-| Config var               | API               | HTTPS         | Historical | Time Series | Sign-up required |
-| ----------------- | ----------------- |:------------: | :--------: | :------------------: | :------------------: |
-|openexchange | https://openexchangerates.org/ | non-free      | non-free   |  non-free            | yes |
-|yahoo | Yahoo Finance     | yes          | no      |  no                | no |
-|currencylayer | https://currencylayer.com/     | non-free             |  yes          |  non-free                | yes |
-|fixer | http://fixer.io/     | yes             |  yes          |  no                | yes |
+Default API is: The European Central Bank
 
+| Config var        | API                           | HTTPS         | Historical    | Time Series | Sign-up required |
+| ----------------- | --------------------------    |:------------: | :---------:   | :---------: | :--------------: |
+|eurocentralbank    | The European Central Bank     | yes           | yes           |  no          | no |
+|openexchange       | https://openexchangerates.org | non-free      | non-free      |  non-free    | yes |
+|yahoo              | Yahoo Finance                 | yes           | no            |  no          | no |
+|currencylayer      | https://currencylayer.com/    | non-free      | yes           |  non-free    | yes |
+|fixer              | http://fixer.io/              | yes           | yes           |  no          | yes |
 
 ### Disclaimer
 Please take note of the Terms of Use for the different data sources.
