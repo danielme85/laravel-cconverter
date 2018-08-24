@@ -34,8 +34,10 @@ class CConverterServiceProvider extends ServiceProvider {
 	 */
 	public function boot()
 	{
-            $configPath = __DIR__ . '/../config/CConverter.php';
-            $this->publishes([$configPath => config_path('CConverter.php')]);
+        $this->mergeConfigFrom(__DIR__.'/../config/CConverter.php', 'CConverter');
+        $this->publishes([
+            __DIR__ . '/../config/CConverter.php' => config_path('CConverter.php')
+        ]);
 	}
 
 	/**
@@ -45,13 +47,11 @@ class CConverterServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-            $configPath = __DIR__ . '/../config/CConverter.php';
-            $this->mergeConfigFrom($configPath, 'CConverter');
             
-            $this->app->bind('Currency', function()
-            {
-                return new \danielme85\CConverter\Currency();
-            });
+        $this->app->bind('Currency', function()
+        {
+            return new Currency();
+        });
 	}
 
 }

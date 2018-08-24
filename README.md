@@ -1,64 +1,45 @@
-# CConverter
-<p>A simple currency conversion plug-in for Laravel 5.* </p>
+# Laravel Currency Converter
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.org/danielme85/Laravel-CConverter.svg?branch=master)](https://travis-ci.org/danielme85/Laravel-CConverter)
+[![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat-square)](https://github.com/danielme85/laravel-cconverter)
+[![PHP from Packagist](https://img.shields.io/packagist/php-v/danielme85/laravel-cconverter.svg?style=flat-square)](https://packagist.org/packages/danielme85/laravel-cconverter)
+[![GitHub release](https://img.shields.io/github/release/danielme85/laravel-cconverter.svg?style=flat-square)](https://packagist.org/packages/danielme85/laravel-cconverter)
+[![GitHub tag](https://img.shields.io/github/tag/danielme85/laravel-cconverter.svg?style=flat-square)](https://github.com/danielme85/laravel-cconverter)
+[![Travis (.org)](https://img.shields.io/travis/danielme85/laravel-cconverter.svg?style=flat-square)](https://travis-ci.org/danielme85/laravel-cconverter)
+[![Codecov](https://img.shields.io/codecov/c/github/danielme85/laravel-cconverter.svg?style=flat-square)](https://codecov.io/gh/danielme85/laravel-cconverter)
 
-<p>
+A simple currency conversion plug-in for Laravel 5.5+ 💵<br>
 Example usage: <a href="https://danielmellum.com/projects/currency-converter" target="_blank">https://danielmellum.com/projects/currency-converter</a>
-</p>
-<p>
-If you are having composer requirement issues using the latest release or dev-master with Laravel v5.4 and below, try the v0.0.7 release.
 
-```
-composer require danielme85/laravel-cconverter@v0.0.7
-```  
-</p>
-<p>
-Please note that as Yahoo Finance has pulled the plug on the historical data API, time-series are not available for Yahoo as a data source anymore.
-</p>
+Version testing and requirements
+
+| Version        | Tested with   |
+| :----------:   |:-------------:| 
+| v0.2.*         | Laravel 5.6   | 
+| v0.1.*         | Laravel 5.5   | 
+| v0.0.7         | Laravel 5.4   | 
+
+<small>If you are having composer requirement issues using the latest release and Laravel < v5.4, try the v0.0.7 release.</small>
+
+Please note:
+* Yahoo Finance has pulled the plug on the historical data API, time-series are not available for Yahoo as a data source anymore.
+* Fixer.io has gone to the dark side and requires a sign-up now. You only get 1000 req per month, I don't recommend using this...
+unless you leverage cache... or maybe even store a model of the response data. You would need to create your own model and migration
+as needed. Note that storing data for more then temporary cache might go against data providers user terms.
 
 ### Installation
-With composer command
 ```
-composer require danielme85/laravel-cconverter@dev-master
-```
-or include under require in composer.json 
-```
-"danielme85/laravel-cconverter": "dev-master"
+composer require danielme85/laravel-cconverter
 ```
 
-And like always slap a line in your config\app.php under Service Providers
-<br>*(If you use Laravel 5.5+ you could skip this step as Autodiscovery has been enabled for this package.)*
-```
-danielme85\CConverter\CConverterServiceProvider::class,
-```
-
-If you want a Class alias add the Facade in the same config file under Class Aliases (Currency is used in this example but you can name it whatever you want)
-<br>*(If you use Laravel 5.5+ you could skip this step as Autodiscovery has been enabled for this package.)*
-```
-'Currency'  => danielme85\CConverter\CConverter::class,
-```
-
-You need to publish the config file with the artisan command:
-```
-php artisan vendor:publish
-```
-or publish vendor config file for this plug-in only (probably cleaner).
+### Configuration 
+You can publish this vendor config file if you would like to make changes to the default config.
 ```
 php artisan vendor:publish --provider="danielme85\CConverter\CConverterServiceProvider"
 ```
-Check the new config\CConverter.php file.
-Cache is enabled per default to 60min. I recommend keeping cache enabled (per default in Laravel 5 this is file cache), expecially when using free sources, this will reduce the traffic load on these community sources.
-When doing multiple conversion at the same time from the same currency the base rate will be loaded into the model (as long as you use the same model instance).   
- 
 
 ### Usage
-
+There are static class "shortcuts" to convert or get one-time Currency series. 
 ```php
-use danielme85\CConverter\Currency;
-
-
 //To convert a value
 $valueNOK = Currency::conv($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2);
 
@@ -77,82 +58,88 @@ $rates = Currency::rates('NOK', '2014-12-24');
 $rates = Currency::rateSeries('USD', 'NOK', '2016-12-24', ''2016-12-31);
 ```
 
-You can override the settings if/when you create a new instance.
-```php
-$currency = new Currency($api = 'yahoo', $https = false, $useCache = false, $cacheMin = 0);
-```
+#### Working with multiple values
+I would highly recommend creating a model instance and the non-static functions getRates() & convert() when doing 
+multiple conversion or getting multiple currency series for the best performance. The currency rates are stored 
+in the provider model by date/base-currency for quick and easy access. 
 
-Use the same model instance and the non-static internal convert() function when doing multiple conversion for the best performance.
-(a lot faster when converting multiple values).
 ```php
 $currency = new Currency();
-$values = array (many many values).
+$values = [1, 3, 4, 5...].
 foreach ($values as $value) {
     $valueNOK = $currency->convert($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2);
 }
+
+$rates = $currency->getRates('NOK');
+foreach ($rates as $rate) {
+    $value = $valueNOK * $rate;
+}
 ```
 
-Information about the current Currency object is provided by the meta() function.
+You can override the settings when/if you create a new instance.
 ```php
-$currency = new Currency();
+$currency = new Currency(
+    $api = 'yahoo', 
+    $https = false, 
+    $useCache = false, 
+    $cacheMin = 0);
 ...
-$info = $currency->meta();
+$result = Currency:conv(
+    $from = 'USD', 
+    $to = 'NOK', 
+    $value = 10, 
+    $decimals = 2, 
+    $date = '2014-12-24', 
+    $api = 'yahoo', 
+    $https = false, 
+    $useCache = false, 
+    $cacheMin = 0);
 ```
-
-
 
 Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.org/wiki/ISO_4217
 
+#### Money Formatting
+The package: gerardojbaez/money is included for an easier and more powerful Money Formatter, excellent alternative to money_format().
+You can get the values of an conversion by setting round='money' (money formatter overrides rounding).
+```php
+Currency::conv('USD', 'USD', 10, 2);
+//Result: 10
+Currency::conv('USD', 'USD', 10, 'money');
+//Result: $10.00
+$currency->convert('USD', 'USD', 10, 'money');
+//Result: $10.00
+```
+You can also get the money formatter itself trough the static Currency function:
+```php
+$formater = Currency::money($amount = 0, $currency = 'USD');
+```
+This Money Formatter also ships with a handy helper function.
+```php
+echo moneyFormat(10, 'USD');
+//Result: $10.00
+
+```
+See Money Formatter github page for more information and usage.
+https://github.com/gerardojbaez/money
+
 ### Supported functions per API
-| Config var               | API               | HTTPS         | Historical | Time Series | Sign-up required |
-| ----------------- | ----------------- |:------------: | :--------: | :------------------: | :------------------: |
-|openexchange | https://openexchangerates.org/ | non-free      | non-free   |  non-free            | yes |
-|yahoo | Yahoo Finance     | yes          | no      |  no                | no |
-|currencylayer | https://currencylayer.com/     | non-free             |  yes          |  non-free                | yes |
-|fixer | http://fixer.io/     | yes             |  yes          |  no                | no |
+Default API is: The European Central Bank
 
-### Version 0.1.1
-* Added Laravel .env support for config settings. 
-* Added unit testing for all sources and test data is local file now. 
-
-### Version 0.1.0
-* Changed composer requirements to match Laravel 5.5+, phpunit 6.0+
-* Changed default currency data from Yahoo to source to fixer.io (Yahoo http source unreliable).
-* Testing in php 7.0 and Laravel 5.5+ environment.
-
-### Version 0.0.7
-* Latest version tested in Laravel 5.4 and php 5.6 environment.
-* Added support for fixer.io
-
-### Version 0.0.6
-* Added support for currencylayer.com, removed jsonrates.com.
-
-### Version 0.0.5
-* Added support for Yahoo finance historical date series ($currencyFrom, $currencyTo, $fromDate, $toDate). PS: if using cache and yahoo as provider, then cache should probably be cleared to avoid any conflicts with the new Yahoo time series currency data. "php artisan cache:clear" 
-
-### Version 0.0.4
-* Better handling of null returns from API's (Logs errors and converts to 0).
-* Added static wrapper classes for quick "oneline" conversions (older methods should still work).
-* http://jsonrates.com/ have closed down their services, replaced by: https://currencylayer.com/ limited support added, though still untested.
-
-### Version 0.0.3
-* Update to support Guzzle v6 and Laravel 5.2, thanks to @mean-cj
-
-### Version 0.0.2-beta
-* Fixed a calculation bug when using free account at openExchange.
-* Added support for http://jsonrates.com (register for free to get a API key).
-* Added support for historical data. Only available with http://jsonrates.com or a non-free account at http://openexchangerates.org.
-Please note that there have not been implemented a proper error handler yet! 
-
+| Config var        | API                           | HTTPS         | Historical    | Time Series | Sign-up required |
+| ----------------- | --------------------------    |:------------: | :---------:   | :---------: | :--------------: |
+|eurocentralbank    | The European Central Bank     | yes           | yes           |  no          | no |
+|openexchange       | https://openexchangerates.org | non-free      | non-free      |  non-free    | yes |
+|yahoo              | Yahoo Finance                 | yes           | no            |  no          | no |
+|currencylayer      | https://currencylayer.com/    | non-free      | yes           |  non-free    | yes |
+|fixer              | http://fixer.io/              | yes           | yes           |  no          | yes |
 
 ### Disclaimer
 Please take note of the Terms of Use for the different data sources.
+<br>
 https://policies.yahoo.com/us/en/yahoo/terms/product-atos/yql/index.htm
-
-~~http://jsonrates.com/terms/~~
-
+<br>
 https://currencylayer.com/terms
-
+<br>
 https://openexchangerates.org/terms
 
 This code is released per the MIT open source license: http://opensource.org/licenses/MIT
