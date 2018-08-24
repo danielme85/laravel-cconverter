@@ -71,22 +71,22 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
      */
     private function convert($input): Rates
     {
+        $rates = new Rates();
         $data = json_decode($input, true);
+
         if (!empty($data)) {
-
-            $time = $data['timestamp'];
-
-            $rates = new Rates();
-            $rates->timestamp = time();
-            $rates->date = date('Y-m-d', $time);
-            $rates->datetime = date('Y-m-d H:i:s', $time);
-            $rates->base = strtoupper($data['source']);
-            $rates->extra = [];
-            $rates->rates = [];
-            $newrates = [];
-
             if (isset($data['success'])) {
                 if ($data['success']) {
+                    $time = $data['timestamp'];
+
+                    $rates->timestamp = time();
+                    $rates->date = date('Y-m-d', $time);
+                    $rates->datetime = date('Y-m-d H:i:s', $time);
+                    $rates->base = strtoupper($data['source']);
+                    $rates->extra = [];
+                    $rates->rates = [];
+                    $newrates = [];
+
                     if (isset($data['quotes']) and is_array($data['quotes'])) {
                         foreach ($data['quotes'] as $key => $row) {
                             if ($key === "$rates->base$rates->base") {
