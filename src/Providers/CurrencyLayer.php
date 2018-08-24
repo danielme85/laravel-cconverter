@@ -20,7 +20,6 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
      */
     public function rates(string $currency, string $date = null) : Rates
     {
-        $results = [];
         $rates = $this->getBaseRates($currency, $date);
         if (empty($rates)) {
             $rates = $this->convert($this->download($currency, $date));
@@ -106,33 +105,5 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
         }
 
         return $rates;
-    }
-
-    /**
-     * Convert data from jsonRates Series to standardized format.
-     *
-     * @param array $data
-     * @return array
-     */
-    private function convertFromJsonRatesSeries($data) {
-        $base = $data['source'];
-        $output = array();
-        $output['base'] = $base;
-
-        $output['to'] = $data['start_date'];
-        $output['from'] = $data['end_date'];
-
-        if (isset($data['quotes']) and is_array($data['quotes'])) {
-            foreach ($data['quotes'] as $key => $row) {
-                $key = str_replace($base, '', $key);
-                $output['rates'][$key]['timestamp'] = strtotime($row['utctime']);
-                $output['rates'][$key]['rate'] = $row['quotes'];
-            }
-        }
-        else {
-            Log::warning('No results returned from CurrencyLayer.');
-        }
-
-        return $output;
     }
 }

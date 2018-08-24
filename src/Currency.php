@@ -96,7 +96,8 @@ class Currency
 
         if ($this->cacheEnabled === true) {
             $cachekey = "cc-$api-$base-$date";
-            if ($rates = Cache::get($cachekey)) {
+            $rates = Cache::get($cachekey);
+            if (is_object($rates) and isset($rates->rates)) {
                 $this->fromCache = true;
                 if ($this->logEnabled) {
                     Log::debug("Got currency rates from cache: $cachekey");
@@ -116,24 +117,6 @@ class Currency
         }
 
         return $rates;
-    }
-
-    /**
-     * Get Rate Series
-     *
-     * @param $base
-     * @param $dateStart
-     * @param $dateEnd
-     * @return bool
-     */
-    public function getRateSeries($base, $dateStart, $dateEnd) {
-        //Check to see if rates is implemented in the provider.
-        if (!method_exists($this->provider, 'rateSeries')) {
-            Log::warning("The provider: $this->api does not support the rateSeries() operation");
-            return false;
-        }
-
-        return false;
     }
 
 

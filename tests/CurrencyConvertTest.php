@@ -146,4 +146,18 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertEquals('$199.99', moneyFormat(199.99, 'USD'));
         $this->assertEquals('kr 8,47', $currency->convert('USD','NOK', 1, 'money'));
     }
+
+    /**
+     * Test the Rate Model
+     * @group ratemodel
+     *
+     * @return void
+     */
+    public function testGetRateModel() {
+        $currency = new Currency(null, null, false, null, true);
+        $model = $currency->getRateModel();
+        $this->assertObjectHasAttribute('base', $model);
+        $this->assertObjectHasAttribute('rates', $model);
+
+    }
 }
