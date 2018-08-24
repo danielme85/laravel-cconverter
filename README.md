@@ -15,8 +15,8 @@ Version testing and requirements
 
 | Version        | Tested with   |
 | :----------:   |:-------------:| 
-| v1.0.0         | Laravel 5.6   | 
-| v0.2.0         | Laravel 5.5   | 
+| v0.2.*         | Laravel 5.6   | 
+| v0.1.*         | Laravel 5.5   | 
 | v0.0.7         | Laravel 5.4   | 
 
 <small>If you are having composer requirement issues using the latest release and Laravel < v5.4, try the v0.0.7 release.</small>
