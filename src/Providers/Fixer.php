@@ -17,9 +17,9 @@ class Fixer extends BaseProvider implements ProviderInterface
      * @param string $currency
      * @param string|null $date
      *
-     * @return array
+     * @return Rates
      */
-    public function rates(string $currency, string $date = null) : array
+    public function rates(string $currency, string $date = null) : Rates
     {
         $results = [];
         $rates = $this->getBaseRates($currency, $date);
@@ -45,11 +45,7 @@ class Fixer extends BaseProvider implements ProviderInterface
             }
         }
 
-        if (isset($rates->rates)) {
-            $results = $rates->rates;
-        }
-
-        return $results;
+        return $rates;
     }
 
 

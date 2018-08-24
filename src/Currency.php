@@ -2,6 +2,7 @@
 
 namespace danielme85\CConverter;
 
+use danielme85\CConverter\Providers\Rates;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -58,7 +59,7 @@ class Currency
     }
 
     /**
-     * Get currency rates
+     * Get currency rates in an array format
      *
      * @param null|string $base The base currency (defaults to USD if null/empty).
      * @param null|string $date The date (defaults to today if null/empty).
@@ -66,6 +67,21 @@ class Currency
      * @return array
      */
     public function getRates($base = null, $date = null) : array
+    {
+        $rates = $this->getRateModel($base, $date);
+
+        return $rates->rates;
+    }
+
+    /**
+     * Get the Rates object from the Provider
+     *
+     * @param null|string $base
+     * @param null|string $date
+     *
+     * @return Rates
+     */
+    public function getRateModel($base = null, $date = null) : Rates
     {
         $base = strtoupper($base);
         if (empty($base)) {

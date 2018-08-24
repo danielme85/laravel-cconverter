@@ -28,14 +28,13 @@ class Yahoo extends BaseProvider implements ProviderInterface
      * @param string $currency
      * @param string $date
      *
-     * @return array
+     * @return Rates
      */
-    public function rates(string $currency, string $date) : array
+    public function rates(string $currency, string $date) : Rates
     {
         //Yahoo only supports rates "right now"
         $date = date('Y-m-d');
 
-        $results = [];
         $rates = $this->getBaseRates($currency, $date);
         if (empty($rates)) {
             $rates = $this->convert($this->download());
@@ -49,11 +48,7 @@ class Yahoo extends BaseProvider implements ProviderInterface
             }
         }
 
-        if (isset($rates->rates)) {
-            $results = $rates->rates;
-        }
-
-        return $results;
+        return $rates;
     }
 
     /**

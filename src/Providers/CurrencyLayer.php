@@ -16,9 +16,10 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
      * @param string $currency
      * @param string|null $date
      *
-     * @return array
+     * @return Rates
      */
-    public function rates(string $currency, string $date = null) {
+    public function rates(string $currency, string $date = null) : Rates
+    {
         $results = [];
         $rates = $this->getBaseRates($currency, $date);
         if (empty($rates)) {
@@ -26,11 +27,7 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
             $this->setBaseRates($rates);
         }
 
-        if (isset($rates->rates)) {
-            $results = $rates->rates;
-        }
-
-        return $results;
+        return $rates;
     }
 
     /**
