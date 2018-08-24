@@ -7,7 +7,6 @@
 [![Travis (.org)](https://img.shields.io/travis/danielme85/laravel-cconverter.svg?style=flat-square)](https://travis-ci.org/danielme85/laravel-cconverter)
 [![Codecov](https://img.shields.io/codecov/c/github/danielme85/laravel-cconverter.svg?style=flat-square)](https://codecov.io/gh/danielme85/laravel-cconverter)
 
-
 A simple currency conversion plug-in for Laravel 5.5+ 💵<br>
 Example usage: <a href="https://danielmellum.com/projects/currency-converter" target="_blank">https://danielmellum.com/projects/currency-converter</a>
 
@@ -98,6 +97,30 @@ $result = Currency:conv(
 ```
 
 Use the three lettered ISO4217 code for to/from currencies: http://en.wikipedia.org/wiki/ISO_4217
+
+#### Money Formatting
+The package: gerardojbaez/money is included for an easier and more powerful Money Formatter, excellent alternative to money_format().
+You can get the values of an conversion by setting round='money' (money formatter overrides rounding).
+```php
+Currency::conv('USD', 'USD', 10, 2);
+//Result: 10
+Currency::conv('USD', 'USD', 10, 'money');
+//Result: $10.00
+$currency->convert('USD', 'USD', 10, 'money');
+//Result: $10.00
+```
+You can also get the money formatter itself trough the static Currency function:
+```php
+$formater = Currency::money($amount = 0, $currency = 'USD');
+```
+This Money Formatter also ships with a handy helper function.
+```php
+echo moneyFormat(10, 'USD');
+//Result: $10.00
+
+```
+See Money Formatter github page for more information and usage.
+https://github.com/gerardojbaez/money
 
 ### Supported functions per API
 Default API is: The European Central Bank

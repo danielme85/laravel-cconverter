@@ -3,6 +3,7 @@
 namespace danielme85\CConverter;
 
 use danielme85\CConverter\Providers\Rates;
+use Gerardojbaez\Money\Money;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -142,10 +143,10 @@ class Currency
      * @param string $from ISO4217 country code
      * @param string $to ISO4217 country code
      * @param mixed $value calculate from this number
-     * @param integer $round round this this number of decimals.
+     * @param integer|string $round round this this number of decimals or use money formatter.
      * @param null|string $date date for historical data
      *
-     * @return float $result
+     * @return float|string $result
      */
     public function convert($from, $to, $value, $round = 2, $date = null)
     {
@@ -168,14 +169,17 @@ class Currency
 
             if ($from === 'USD') {
                 //All currencies are stored in the model has USD as base currency
-                $result = $rate;
+                $result = $value * $rate;
             }
             else {
                 //Convert Currencies via USD
                 $result = $rate * ($value/$rates[$from]);
             }
 
-            if ($round or $round === 0) {
+            if ($round === 'money') {
+                $result = moneyFormat($result, $to);
+            }
+            else if ($round or $round === 0) {
                 $result = round($result, $round);
             }
         }
@@ -191,10 +195,10 @@ class Currency
      *
      * @param string $from ISO4217 country code
      * @param string $to ISO4217 country code
-     * @param mixed $int calculate from this number
-     * @param null|integer $round round this this number of desimals.
+     * @param mixed $value calculate from this number
+     * @param null|integer|string $round round this this number of decimals, or use 'money' for money formatter.
      * @param null|string $date date for historical data
-     * @param null|string $api override Provider setting
+     * @param null|string $api override Provider setting,
      * @param null|bool $https override https setting
      * @param null|bool $useCache override cache setting
      * @param null|int $cacheMin override cache setting
@@ -202,11 +206,11 @@ class Currency
      *
      * @return mixed $result
      */
-    public static function conv($from, $to, $int = 0, $round = null, $date = null, $api = null, $https = null,
+    public static function conv($from, $to, $value, $round = null, $date = null, $api = null, $https = null,
                                 $useCache = null, $cacheMin = null, $runastest = false)
     {
         $convert = new self($api, $https, $useCache, $cacheMin, $runastest);
-        return $convert->convert($from, $to, $int, $round, $date);
+        return $convert->convert($from, $to, $value, $round, $date);
     }
 
 
@@ -234,7 +238,6 @@ class Currency
      * Get a rate series for given to/from currency and dates
      *
      * @param null|string $base
-     * @param null|string $to
      * @param null|string $start
      * @param null|string $end
      * @param null|bool $https override https setting
@@ -259,5 +262,18 @@ class Currency
      */
     public function provider() {
         return $this->provider;
+    }
+
+    /**
+     * Money formatter
+     *
+     * @param int $amount
+     * @param string $currency
+     *
+     * @return Money
+     */
+    public static function money($amount = 0, $currency = 'USD') : Money
+    {
+        return new Money($amount, $currency);
     }
 }

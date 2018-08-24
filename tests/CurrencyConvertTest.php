@@ -29,10 +29,14 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertEquals(1, $rates['USD']);
 
         $this->assertEquals(8.47, $currency->convert('USD', 'NOK', 1));
+        $this->assertEquals(846.94, $currency->convert('USD', 'NOK', 100));
+
         $this->assertEquals(0.88, $currency->convert('USD', 'EUR', 1));
-        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
-        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
-        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+        $this->assertEquals(87.57, $currency->convert('USD', 'EUR', 100));
+
+        $this->assertEquals(10, $currency->convert('USD', 'USD', 10));
+        $this->assertEquals(10, $currency->convert('EUR', 'EUR', 10));
+        $this->assertEquals(10, $currency->convert('NOK', 'NOK', 10));
     }
 
     /**
@@ -128,5 +132,18 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertNotEmpty($currency->getRates());
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+    }
+
+    /**
+     * Test the money formatter.
+     * @group money
+     *
+     * @return void
+     */
+    public function testMoneyFormat() {
+        $currency = new Currency(null, null, false, null, true);
+        $this->assertEquals('$10.00', $currency->convert('USD','USD', 10, 'money'));
+        $this->assertEquals('$199.99', moneyFormat(199.99, 'USD'));
+        $this->assertEquals('kr 8,47', $currency->convert('USD','NOK', 1, 'money'));
     }
 }
