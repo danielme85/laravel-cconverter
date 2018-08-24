@@ -71,6 +71,21 @@ class Currency
     {
         $rates = $this->getRateModel($base, $date);
 
+        return $rates->toArray();
+    }
+
+    /**
+     * Get currency rates in an array format
+     *
+     * @param null|string $base The base currency (defaults to USD if null/empty).
+     * @param null|string $date The date (defaults to today if null/empty).
+     *
+     * @return array
+     */
+    public function getRateResults($base = null, $date = null) : array
+    {
+        $rates = $this->getRateModel($base, $date);
+
         return $rates->rates;
     }
 
@@ -141,11 +156,11 @@ class Currency
             return $result;
         }
 
-        $rates = $this->getRates($from, $date);
+        $rates = $this->getRateResults($from, $date);
 
         if (!empty($rates)) {
             if (!array_key_exists($to, $rates)) {
-                Log::warning("The currency $to does not exist for the provider: $this->provider->name");
+                Log::warning("The currency $to does not exist for the provider: $this->api");
                 return $result;
             }
             $rate = $rates[$to];
@@ -167,7 +182,7 @@ class Currency
             }
         }
         else {
-            Log::warning("No rates for $from found from provider: $this->provider->name");
+            Log::warning("No rates for $from found from provider: $this->api");
             return $result;
         }
         return $result;
@@ -214,7 +229,7 @@ class Currency
                                  $useCache = null, $cacheMin = null, $runastest = false) : array
     {
         $rates = new self($api, $https, $useCache, $cacheMin, $runastest);
-        return $rates->getRates($base, $date);
+        return $rates->getRateResults($base, $date);
     }
 
     /**
