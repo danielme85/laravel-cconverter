@@ -23,10 +23,9 @@ class OpenExchange extends BaseProvider implements ProviderInterface
      */
     public function rates(string $currency, string $date): Rates
     {
-        $results = [];
         $rates = $this->getBaseRates($currency, $date);
         if (empty($rates)) {
-            $rates = $this->convert($this->download($date));
+            $rates = $this->convert($this->download($currency, $date));
             if ($currency !== 'EUR') {
                 //Set USD base rate
                 $this->setBaseRates($rates->convertBaseRatesToUSD());
@@ -48,7 +47,7 @@ class OpenExchange extends BaseProvider implements ProviderInterface
      *
      * @return array
      */
-    private function download($currency, $fromDate = null, $toDate = null)
+    private function download($currency, $date)
     {
         //use test data if running as test
         if ($this->runastest) {
@@ -68,10 +67,10 @@ class OpenExchange extends BaseProvider implements ProviderInterface
                 $url = 'http';
             }
 
-            if (!empty($fromDate) and !empty($toDate)) {
-                $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] . '&start=' . $fromDate . '&end=' . $toDate . '&base=' . $base;
-            } else {
+            if ($date === date('Y-m-d')) {
                 $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] . '&base=' . $base;
+            } else {
+                $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] . '&start=' . $date . '&end=' . $date . '&base=' . $base;
             }
 
             $results = $this->connect($url);
@@ -86,21 +85,22 @@ class OpenExchange extends BaseProvider implements ProviderInterface
      *
      * @return Rates
      */
-    protected function convert($input, $date = null) : Rates
+    protected function convert($input) : Rates
     {
+        $rates = new Rates();
+        $rates->timestamp = time();
+        $rates->date = $this->date;
+        $rates->base = 'USD';
+        $rates->rates = [];
+
+        if ($this->date !== date('Y-m-d')) {
+            $date = $this->date;
+        } else {
+            $date = null;
+        }
+
         $data = json_decode($input, true);
         if (!empty($data)) {
-
-            $time = $data['timestamp'];
-
-            $rates = new Rates();
-            $rates->timestamp = time();
-            $rates->date = date('Y-m-d', $time);
-            $rates->datetime = date('Y-m-d H:i:s', $time);
-            $rates->base = strtoupper($data['base']);
-            $rates->extra = [];
-            $rates->rates = [];
-
             if (!empty($date)) {
                 if (isset($data['rates'][$date]) and is_array($data['rates'][$date])) {
                     foreach ($data['rates'][$date] as $key => $row) {
@@ -116,7 +116,6 @@ class OpenExchange extends BaseProvider implements ProviderInterface
                     Log::warning('No results returned from OpenExchange.');
                 }
             }
-
         }
 
         return $rates;

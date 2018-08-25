@@ -75,6 +75,7 @@ class Yahoo extends BaseProvider implements ProviderInterface
                 $url .= "$base$currency%2C";
             }
             $url .= '%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys';
+
             $response = $this->connect($url);
         }
 
@@ -84,20 +85,17 @@ class Yahoo extends BaseProvider implements ProviderInterface
 
 
     protected function convert($input) {
+        $rates = new Rates();
+        $rates->timestamp = time();
+        $rates->date = $this->date;
+        $rates->base = 'USD';
+        $rates->rates = [];
+
         $data = json_decode($input, true);
         if (!empty($data)) {
             if (!empty($data['query'])) {
-                $time = strtotime($data['query']['created']);
 
-                $rates = new Rates();
-                $rates->timestamp = time();
-                $rates->date = date('Y-m-d', $time);
-                $rates->datetime = date('Y-m-d H:i:s', $time);
-                $rates->base = 'USD';
-                $rates->extra = [];
-                $rates->rates = [];
-
-                $newrates = [];
+                $rates->extra['query_created'] = $data['query']['created'] ?? null;
 
                 if (isset($data['query']['results']['rate']) and is_array($data['query']['results']['rate'])) {
                     foreach ($data['query']['results']['rate'] as $row) {
@@ -119,7 +117,7 @@ class Yahoo extends BaseProvider implements ProviderInterface
                 }
             }
         }
+
         return $rates;
     }
-
 }

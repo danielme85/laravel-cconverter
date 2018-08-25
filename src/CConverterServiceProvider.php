@@ -34,7 +34,7 @@ class CConverterServiceProvider extends ServiceProvider {
 	 */
 	public function boot()
 	{
-        $this->mergeConfigFrom(__DIR__.'/../config/CConverter.php', 'CConverter');
+        $this->mergeConfigFrom(__DIR__.'/../config/currencyConverter.php', 'currencyConverter');
         $this->publishes([
             __DIR__ . '/../config/CConverter.php' => config_path('CConverter.php')
         ]);

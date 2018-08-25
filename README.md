@@ -125,13 +125,13 @@ https://github.com/gerardojbaez/money
 ### Supported functions per API
 Default API is: The European Central Bank
 
-| Config var        | API                           | HTTPS         | Historical    | Time Series | Sign-up required |
-| ----------------- | --------------------------    |:------------: | :---------:   | :---------: | :--------------: |
-|eurocentralbank    | The European Central Bank     | yes           | yes           |  no          | no |
-|openexchange       | https://openexchangerates.org | non-free      | non-free      |  non-free    | yes |
-|yahoo              | Yahoo Finance                 | yes           | no            |  no          | no |
-|currencylayer      | https://currencylayer.com/    | non-free      | yes           |  non-free    | yes |
-|fixer              | http://fixer.io/              | yes           | yes           |  no          | yes |
+| Config var        | API                           | HTTPS         | Historical    |  Sign-up required |
+| ----------------- | --------------------------    |:------------: | :---------:   |  :--------------: |
+|eurocentralbank    | The European Central Bank     | yes           | yes           |   no              |
+|openexchange       | https://openexchangerates.org | non-free      | non-free      |   yes             |
+|yahoo              | Yahoo Finance                 | yes           | no            |   no              |
+|currencylayer      | https://currencylayer.com/    | non-free      | yes           |   yes             |
+|fixer              | http://fixer.io/              | yes           | yes           |   yes             |
 
 ### Disclaimer
 Please take note of the Terms of Use for the different data sources.

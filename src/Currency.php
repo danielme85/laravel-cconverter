@@ -29,8 +29,8 @@ class Currency
      *
      */
     public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = false) {
-        if (!$settings = Config::get('CConverter')) {
-            Log::info('The CConverter.php config file was not found.');
+        if (!$settings = Config::get('currencyConverter')) {
+            Log::info('The currencyConverter.php config file was not found.');
         }
         //Override config/settings with constructor variables if present.
         if (isset($api)) {

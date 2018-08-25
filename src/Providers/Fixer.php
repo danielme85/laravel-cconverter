@@ -21,7 +21,6 @@ class Fixer extends BaseProvider implements ProviderInterface
      */
     public function rates(string $currency, string $date = null) : Rates
     {
-        $results = [];
         $rates = $this->getBaseRates($currency, $date);
         if (empty($rates)) {
             if ($this->settings['fixer-use-real-base']) {
@@ -83,22 +82,22 @@ class Fixer extends BaseProvider implements ProviderInterface
     /**
      * Convert data from fixer.io to standardized format.
      *
-     * @param array $data
-     * @return array
+     * @param string $input
+     * @return Rates
      */
-    private function convert($input) {
-        $data = json_decode($input, true);
-
-        $time = strtotime($data['date']);
-
+    private function convert($input) : Rates
+    {
         $rates = new Rates();
         $rates->timestamp = time();
-        $rates->date = date('Y-m-d', $time);
-        $rates->datetime = date('Y-m-d H:i:s', $time);
+        $rates->date = $this->date;
         $rates->base = 'EUR';
+        $rates->rates = [];
+
+        $data = json_decode($input, true);
 
         if (!empty($data)) {
             if (!empty($data['rates'])) {
+                $rates->extra['fixer_date'] = $data['date'] ?? null;
                 foreach ($data['rates'] as $key => $row) {
                     $newrates[$key] = $row;
                 }

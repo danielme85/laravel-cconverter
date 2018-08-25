@@ -26,3 +26,5 @@ Temporary Items
 # Created by .ignore support plugin (hsz.mobi)
 .idea
 vendor
+.env
+.env.testing

@@ -11,7 +11,6 @@ class Rates
 {
     public $timestamp;
     public $date;
-    public $datetime;
     public $base;
     public $extra;
     public $rates;

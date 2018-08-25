@@ -16,6 +16,26 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     }
 
     /**
+     * Define environment setup.
+     *
+     * @param  \Illuminate\Foundation\Application  $app
+     *
+     * @return void
+     */
+    protected function getEnvironmentSetUp($app)
+    {
+        if (file_exists(dirname(__DIR__) . '/.env.testing')) {
+            (new \Dotenv\Dotenv(dirname(__DIR__), '/.env.testing'))->load();
+        }
+
+        $hash1 = getenv('HASH1') ?? env('HASH1') ?? '';
+        $hash2 = getenv('HASH2') ?? env('HASH2') ?? '';
+        $app['config']->set('currencyConverter.openex-app-id', $hash1);
+        $app['config']->set('currencyConverter.currencylayer-access-key', $hash2);
+
+    }
+
+    /**
      * Test of default settings and init
      * @group basics
      *
@@ -73,7 +93,7 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
 
         //Test with live data
         $currency = new Currency('eurocentralbank');
-        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertNotEmpty($currency->getRates());
 
     }
 
@@ -104,6 +124,12 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
 
+
+        //Live test
+        $currency = new Currency('currencylayer', false);
+        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertNotEmpty($currency->getRateResults('USD', '2018-01-01'));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
     }
 
     /**
@@ -118,6 +144,10 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertNotEmpty($currency->getRateResults());
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+
+        //Test with live data
+        $currency = new Currency('yahoo');
+        $this->assertNotEmpty($currency->getRates());
     }
 
     /**
@@ -132,6 +162,11 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertNotEmpty($currency->getRateResults());
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+
+        //Live test
+        $currency = new Currency('openexchange', false);
+        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
     }
 
     /**
@@ -143,7 +178,7 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     public function testMoneyFormat() {
         $currency = new Currency(null, null, false, null, true);
         $this->assertEquals('$10.00', $currency->convert('USD','USD', 10, 'money'));
-        $this->assertEquals('$199.99', moneyFormat(199.99, 'USD'));
+        $this->assertEquals('$199.99', Currency::money(199.99, 'USD'));
         $this->assertEquals('kr 8,47', $currency->convert('USD','NOK', 1, 'money'));
     }
 
