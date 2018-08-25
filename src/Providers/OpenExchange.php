@@ -25,25 +25,26 @@ class OpenExchange extends BaseProvider implements ProviderInterface
     {
         $rates = $this->getBaseRates($currency, $date);
         if (empty($rates)) {
-            $rates = $this->convert($this->download($currency, $date));
-            if ($currency !== 'EUR') {
-                //Set USD base rate
-                $this->setBaseRates($rates->convertBaseRatesToUSD());
-
+            if ($this->settings['openex-use-real-base']) {
+                $rates = $this->convert($this->download($currency, $date));
+            } else {
+                $rates = $this->convert($this->download('USD', $date));
                 if ($currency !== 'USD') {
                     $rates = $rates->convertBaseRateToCurrency($currency);
-                    $this->setBaseRates($rates);
                 }
-            } else {
-                $this->setBaseRates($rates);
             }
+            $this->setBaseRates($rates);
         }
+
 
         return $rates;
     }
 
     /**
      * Get data from openExchange
+     *
+     * @param string $currency
+     * @param string $date
      *
      * @return array
      */
@@ -54,13 +55,6 @@ class OpenExchange extends BaseProvider implements ProviderInterface
             $results = file_get_contents(dirname(__FILE__) . '/../../tests/openExchangeTestData.json');
         }
         else {
-            //A special case for openExchange free version.
-            if (!$this->settings['openex-use-real-base']) {
-                $base = 'USD';
-            } else {
-                $base = $currency;
-            }
-
             if ($this->settings['use-ssl']) {
                 $url = 'https';
             } else {
@@ -68,9 +62,9 @@ class OpenExchange extends BaseProvider implements ProviderInterface
             }
 
             if ($date === date('Y-m-d')) {
-                $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] . '&base=' . $base;
+                $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] . '&base=' . $currency;
             } else {
-                $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] . '&start=' . $date . '&end=' . $date . '&base=' . $base;
+                $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] . '&start=' . $date . '&end=' . $date . '&base=' . $currency;
             }
 
             $results = $this->connect($url);

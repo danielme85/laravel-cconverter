@@ -47,7 +47,6 @@ class CConverterServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-            
         $this->app->bind('Currency', function()
         {
             return new Currency();

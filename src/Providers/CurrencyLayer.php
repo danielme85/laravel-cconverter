@@ -49,7 +49,7 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
         else {
             $base = 'USD';
 
-            if ($this->settings['use-https']) {
+            if ($this->settings['use-ssl']) {
                 $url = 'https';
             } else {
                 $url = 'http';

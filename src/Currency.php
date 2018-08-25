@@ -37,7 +37,7 @@ class Currency
             $settings['api-source'] = $api;
         }
         if (isset($https)) {
-            $settings['use-https'] = $https;
+            $settings['use-ssl'] = $https;
         }
         if (isset($useCache)) {
             $settings['enable-cache'] = $useCache;
@@ -230,26 +230,6 @@ class Currency
     {
         $rates = new self($api, $https, $useCache, $cacheMin, $runastest);
         return $rates->getRateResults($base, $date);
-    }
-
-    /**
-     * Get a rate series for given to/from currency and dates
-     *
-     * @param null|string $base
-     * @param null|string $start
-     * @param null|string $end
-     * @param null|bool $https override https setting
-     * @param null|bool $useCache override cache setting
-     * @param null|int $cacheMin override cache setting
-     * @param null|bool $runastest for testing, uses local test data.
-     *
-     * @return array
-     */
-    public static function rateSeries($base, $start, $end, $api = null, $https = null,
-                                      $useCache = null, $cacheMin = null, $runastest = false) : array
-    {
-        $rates = new self($api, $https, $useCache, $cacheMin, $runastest);
-        return $rates->getRateSeries($base, $start, $end);
     }
 
 
