@@ -75,7 +75,7 @@ class Yahoo extends BaseProvider implements ProviderInterface
                 $url .= "$base$currency%2C";
             }
             $url .= '%22)&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys';
-
+            $this->url = $url;
             $response = $this->connect($url);
         }
 
@@ -90,32 +90,40 @@ class Yahoo extends BaseProvider implements ProviderInterface
         $rates->date = $this->date;
         $rates->base = 'USD';
         $rates->rates = [];
+        $rates->url = $this->url;
 
-        $data = json_decode($input, true);
         if (!empty($data)) {
-            if (!empty($data['query'])) {
+            $data = json_decode($input, true);
+            if (!empty($data)) {
+                if (!empty($data['query'])) {
 
-                $rates->extra['query_created'] = $data['query']['created'] ?? null;
+                    $rates->extra['query_created'] = $data['query']['created'] ?? null;
 
-                if (isset($data['query']['results']['rate']) and is_array($data['query']['results']['rate'])) {
-                    foreach ($data['query']['results']['rate'] as $row) {
-                        $key = str_replace("$rates->base/", '', $row['Name']);
-                        if ($key !== 'N/A') {
-                            $value = $row['Ask'];
-                            if ($value === 'N/A') {
-                                $value = 0;
+                    if (isset($data['query']['results']['rate']) and is_array($data['query']['results']['rate'])) {
+                        foreach ($data['query']['results']['rate'] as $row) {
+                            $key = str_replace("$rates->base/", '', $row['Name']);
+                            if ($key !== 'N/A') {
+                                $value = $row['Ask'];
+                                if ($value === 'N/A') {
+                                    $value = 0;
+                                } else {
+                                    $value = floatval($value);
+                                }
+                                $newrates[$key] = $value;
                             }
-                            else {
-                                $value = floatval($value);
-                            }
-                            $newrates[$key] = $value;
                         }
                     }
+                    if (!empty($newrates)) {
+                        $rates->rates = $newrates;
+                    }
                 }
-                if (!empty($newrates)) {
-                    $rates->rates = $newrates;
+                else {
+                    $rates->error = "No results returned from Yahoo Financial data.";
                 }
             }
+        }
+        else {
+            $rates->error = "No data in response from Yahoo Financial data.";
         }
 
         return $rates;

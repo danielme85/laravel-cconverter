@@ -21,6 +21,8 @@ class BaseProvider
     protected $runastest;
     protected $settings;
 
+    protected $url;
+
     /**
      * BaseProvider constructor.
      *

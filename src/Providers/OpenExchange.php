@@ -66,7 +66,7 @@ class OpenExchange extends BaseProvider implements ProviderInterface
             } else {
                 $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] . '&start=' . $date . '&end=' . $date . '&base=' . $currency;
             }
-
+            $this->url = $url;
             $results = $this->connect($url);
         }
 
@@ -86,6 +86,7 @@ class OpenExchange extends BaseProvider implements ProviderInterface
         $rates->date = $this->date;
         $rates->base = 'USD';
         $rates->rates = [];
+        $rates->url = $this->url;
 
         if ($this->date !== date('Y-m-d')) {
             $date = $this->date;
@@ -110,6 +111,9 @@ class OpenExchange extends BaseProvider implements ProviderInterface
                     Log::warning('No results returned from OpenExchange.');
                 }
             }
+        }
+        else {
+            $rates->error = "No data in response from OpenExchange";
         }
 
         return $rates;

@@ -30,9 +30,9 @@ return array (
     'enable-cache' => env('CC_ENABLE_CACHE', true),
 
     //minutes cache should expire.
-    'cache-min' => env('CC_ENABLE_CACHE',60),
+    'cache-min' => env('CC_ENABLE_CACHE', 60),
 
     //use Laravel detailed logging
-    'enable-log' => env('CC_ENABLE_LOG',false),
+    'enable-log' => env('CC_ENABLE_LOG', false),
 
 );

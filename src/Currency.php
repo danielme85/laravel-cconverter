@@ -120,7 +120,7 @@ class Currency
             }
             else {
                 $rates = $this->provider->rates($base, $date);
-                if ($rates) {
+                if (!empty($rates->rates)) {
                     if(Cache::add($cachekey, $rates, $this->cacheMinutes) and $this->logEnabled) {
                         Log::debug('Added new currency rates to cache: '.$cachekey.' for '.$this->cacheMinutes.' min.');
                     }

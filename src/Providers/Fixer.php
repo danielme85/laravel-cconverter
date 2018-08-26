@@ -71,7 +71,7 @@ class Fixer extends BaseProvider implements ProviderInterface
             } else {
                 $url .= "://data.fixer.io/api/latest?base=$currency";
             }
-
+            $this->url = $url;
             $response = $this->connect($url);
         }
 
@@ -92,6 +92,7 @@ class Fixer extends BaseProvider implements ProviderInterface
         $rates->date = $this->date;
         $rates->base = 'EUR';
         $rates->rates = [];
+        $rates->url = $this->url;
 
         $data = json_decode($input, true);
 
@@ -104,6 +105,9 @@ class Fixer extends BaseProvider implements ProviderInterface
                 //add 1:1 conversion rate from base for testing
                 $newrates[$data['base']] = 1;
             }
+        }
+        else {
+            $rates->error = "No data in response from Fixer.io";
         }
         $rates->rates = $newrates;
 

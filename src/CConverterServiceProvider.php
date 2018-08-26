@@ -36,7 +36,7 @@ class CConverterServiceProvider extends ServiceProvider {
 	{
         $this->mergeConfigFrom(__DIR__.'/../config/currencyConverter.php', 'currencyConverter');
         $this->publishes([
-            __DIR__ . '/../config/CConverter.php' => config_path('CConverter.php')
+            __DIR__ . '/../config/CConverter.php' => config_path('currencyConverter.php')
         ]);
 	}
 

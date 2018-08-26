@@ -14,6 +14,8 @@ class Rates
     public $base;
     public $extra;
     public $rates;
+    public $url;
+    public $error = false;
 
     /**
      * Convert rates to new currency

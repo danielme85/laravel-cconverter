@@ -67,13 +67,13 @@ class EuropeanCentralBank extends BaseProvider implements ProviderInterface
             }
             $url .= "://sdw-wsrest.ecb.europa.eu/service/data/EXR/D..EUR.SP00.A?startPeriod=$date&endPeriod=$date&detail=dataonly";
 
+            $this->url = $url;
+
             $response = $this->connect($url, [
                 'Accept' => 'application/vnd.sdmx.data+json;version=1.0.0-wd',
                 'Accept-Encoding' => 'gzip'
             ]);
         }
-
-
 
         return $response;
     }
@@ -92,6 +92,7 @@ class EuropeanCentralBank extends BaseProvider implements ProviderInterface
         $rates->date = $this->date;
         $rates->base = 'EUR';
         $rates->rates = [];
+        $rates->url = $this->url;
 
         if (!empty($input)) {
             $data = json_decode($input, true);
@@ -139,6 +140,9 @@ class EuropeanCentralBank extends BaseProvider implements ProviderInterface
                     $rates->rates['EUR'] = 1;
                 }
             }
+        }
+        else {
+            $rates->error = "No data in response from the European Central Bank.";
         }
 
         return $rates;

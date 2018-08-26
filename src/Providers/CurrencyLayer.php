@@ -64,7 +64,7 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
             } else {
                 $url .= '://apilayer.net/api/live?access_key=' . $this->settings['currencylayer-access-key'] . '&source=' . $base;
             }
-
+            $this->url = $url;
             $response = $this->connect($url);
         }
 
@@ -85,6 +85,7 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
         $rates->date = $this->date;
         $rates->base = 'USD';
         $rates->rates = [];
+        $this->url = $this->url;
 
         $data = json_decode($input, true);
 
@@ -109,6 +110,10 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
                 $rates->extra['cl_error'] = $data['error'] ?? null;
             }
         }
+        else {
+            $rates->error = "No data in response from Currency Layer.";
+        }
+
         if (!empty($newrates)) {
             $rates->rates = $newrates;
         }
