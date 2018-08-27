@@ -94,6 +94,7 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
 
 
         //Test with live data
+        //The European central bank has an unstable response success rate so we just check the model after the request.
         $currency = new Currency('eurocentralbank');
         $this->assertNotEmpty($currency->getRates());
 
@@ -154,6 +155,8 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
 
         //Test with live data
+        //Yahoo YQL queries for currency exchange information seems to be broken for the moment.
+        //Let's not expect any successful requests.
         $currency = new Currency('yahoo');
         $this->assertNotEmpty($currency->getRates());
     }

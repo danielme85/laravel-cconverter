@@ -92,7 +92,7 @@ class Yahoo extends BaseProvider implements ProviderInterface
         $rates->rates = [];
         $rates->url = $this->url;
 
-        if (!empty($data)) {
+        if (!empty($input)) {
             $data = json_decode($input, true);
             if (!empty($data)) {
                 if (!empty($data['query'])) {
