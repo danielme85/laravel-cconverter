@@ -67,9 +67,9 @@ class Fixer extends BaseProvider implements ProviderInterface
                 $url = 'http';
             }
             if (!empty($date)) {
-                $url .= "://data.fixer.io/api/$date?base=$currency";
+                $url .= "://data.fixer.io/api/$date?access_key=".$this->settings['fixer-access-key']."&base=$currency";
             } else {
-                $url .= "://data.fixer.io/api/latest?base=$currency";
+                $url .= "://data.fixer.io/api/latest?access_key=".$this->settings['fixer-access-key']."&base=$currency";
             }
             $this->url = $url;
             $response = $this->connect($url);
@@ -100,16 +100,15 @@ class Fixer extends BaseProvider implements ProviderInterface
             if (!empty($data['rates'])) {
                 $rates->extra['fixer_date'] = $data['date'] ?? null;
                 foreach ($data['rates'] as $key => $row) {
-                    $newrates[$key] = $row;
+                    $rates->rates[$key] = $row;
                 }
                 //add 1:1 conversion rate from base for testing
-                $newrates[$data['base']] = 1;
+                $rates->rates[$data['base']] = 1;
             }
         }
         else {
             $rates->error = "No data in response from Fixer.io";
         }
-        $rates->rates = $newrates;
 
         return $rates;
     }

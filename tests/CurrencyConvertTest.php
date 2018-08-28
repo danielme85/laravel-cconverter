@@ -116,7 +116,7 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
 
         //Live test
-        $currency = new Currency('currencylayer', false);
+        $currency = new Currency('fixer', false);
         $this->assertNotEmpty($currency->getRateResults());
         $this->assertNotEmpty($currency->getRateResults('USD', '2018-01-01'));
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
