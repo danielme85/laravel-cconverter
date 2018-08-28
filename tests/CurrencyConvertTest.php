@@ -30,9 +30,10 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
 
         $hash1 = getenv('HASH1') ?? env('HASH1') ?? '';
         $hash2 = getenv('HASH2') ?? env('HASH2') ?? '';
+        $hash3 = getenv('HASH3') ?? env('HASH3') ?? '';
         $app['config']->set('currencyConverter.openex-app-id', $hash1);
         $app['config']->set('currencyConverter.currencylayer-access-key', $hash2);
-
+        $app['config']->set('currencyConverter.fixer-access-key', $hash3);
     }
 
     /**
@@ -110,6 +111,14 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     {
         $currency = new Currency('fixer', null, false, null, true);
         $this->assertNotEmpty($currency->getRateResults());
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
+        //Live test
+        $currency = new Currency('currencylayer', false);
+        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertNotEmpty($currency->getRateResults('USD', '2018-01-01'));
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
         $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
