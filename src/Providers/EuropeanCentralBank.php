@@ -62,7 +62,7 @@ class EuropeanCentralBank extends BaseProvider implements ProviderInterface
             } else {
                 $url = 'http';
             }
-            if (!empty($date)) {
+            if (empty($date)) {
                 $date = date('Y-m-d');
             }
             $url .= "://sdw-wsrest.ecb.europa.eu/service/data/EXR/D..EUR.SP00.A?startPeriod=$date&endPeriod=$date&detail=dataonly";
