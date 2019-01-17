@@ -150,27 +150,6 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     }
 
     /**
-     * Test to see if the Currency object can be created with Yahoo Finance.
-     * @group yahoo
-     *
-     * @return void
-     */
-    public function testYahoo()
-    {
-        $currency = new Currency('yahoo', null, false, null, true);
-        $this->assertNotEmpty($currency->getRateResults());
-        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
-        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
-        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
-
-        //Test with live data
-        //Yahoo YQL queries for currency exchange information seems to be broken for the moment.
-        //Let's not expect any successful requests.
-        $currency = new Currency('yahoo');
-        $this->assertNotEmpty($currency->getRates());
-    }
-
-    /**
      * Test to see if the Currency object can be created with OpenExchange.
      * @group openexchange
      *

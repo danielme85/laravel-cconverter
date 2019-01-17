@@ -129,9 +129,11 @@ Default API is: The European Central Bank
 | ----------------- | --------------------------    |:------------: | :---------:   |  :--------------: |
 |eurocentralbank    | The European Central Bank     | yes           | yes           |   no              |
 |openexchange       | https://openexchangerates.org | non-free      | non-free      |   yes             |
-|yahoo              | Yahoo Finance                 | yes           | no            |   no              |
+|* ~~yahoo~~        | ~~Yahoo Finance~~             | ~~yes~~       | ~~no~~        |   ~~no~~          |
 |currencylayer      | https://currencylayer.com/    | non-free      | yes           |   yes             |
 |fixer              | http://fixer.io/              | yes           | yes           |   yes             |
+
+<i>*Yahoo has discontinued their finance data API.</i>
 
 ### Disclaimer
 Please take note of the Terms of Use for the different data sources.
