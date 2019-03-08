@@ -3,7 +3,7 @@
 return array (
     
     //API source. 
-    //Possible values: 'eurocentralbank' | 'openexchange' | 'yahoo' | 'currencylayer' | 'fixer'
+    //Possible values: 'eurocentralbank' | 'openexchange'  | 'currencylayer' | 'fixer'
     'api-source' => env('CC_API_SOURCE', 'eurocentralbank'),
 
     //Your app id from openexchangerates.org

@@ -236,7 +236,7 @@ class Currency
     /**
      * Get the provider model instance
      *
-     * @return Providers\CurrencyLayer|Providers\EuropeanCentralBank|Providers\Fixer|Providers\OpenExchange|Providers\Yahoo
+     * @return Providers\CurrencyLayer|Providers\EuropeanCentralBank|Providers\Fixer|Providers\OpenExchange
      */
     public function provider() {
         return $this->provider;

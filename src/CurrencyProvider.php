@@ -10,25 +10,21 @@ namespace danielme85\CConverter;
 use danielme85\CConverter\Providers\EuropeanCentralBank;
 use danielme85\CConverter\Providers\Fixer;
 use danielme85\CConverter\Providers\OpenExchange;
-use danielme85\CConverter\Providers\Yahoo;
 use danielme85\CConverter\Providers\CurrencyLayer;
 
 class CurrencyProvider
 {
 
     /**
-     * @param string $apiSource 'eurocentralbank'|'openexchange'|'yahoo'|'currencylayer'|'fixer'
+     * @param string $apiSource 'eurocentralbank'|'openexchange'|'currencylayer'|'fixer'
      * @param array $settings
-     * @return CurrencyLayer|EuropeanCentralBank|Fixer|OpenExchange|Yahoo
+     * @return CurrencyLayer|EuropeanCentralBank|Fixer|OpenExchange
      * @throws \Exception
      */
     public static function getProvider($apiSource, $settings)
     {
         if ($apiSource === 'eurocentralbank') {
             return new EuropeanCentralBank($settings);
-        }
-        else if ($apiSource === 'yahoo') {
-            return new Yahoo($settings);
         }
         else if ($apiSource === 'openexchange') {
             return new OpenExchange($settings);
