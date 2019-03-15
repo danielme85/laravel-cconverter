@@ -109,8 +109,9 @@ class Currency
         $this->fromCache = false;
         $api = $this->api;
 
-        if ($this->cacheEnabled === true) {
+        if ($this->cacheEnabled) {
             $cachekey = "cc-$api-$base-$date";
+
             $rates = Cache::get($cachekey);
             if (is_object($rates) and isset($rates->rates)) {
                 $this->fromCache = true;
@@ -129,6 +130,10 @@ class Currency
         }
         else {
             $rates = $this->provider->rates($base, $date);
+        }
+
+        if (empty($rates->rates)) {
+            Log::warning("$rates->error -> $rates->url");
         }
 
         return $rates;

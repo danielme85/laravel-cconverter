@@ -21,10 +21,14 @@ Version testing and requirements
 <small>If you are having composer requirement issues using the latest release and Laravel < v5.4, try the v0.0.7 release.</small>
 
 Please note:
-* Yahoo Finance has pulled the plug on the historical data API, time-series are not available for Yahoo as a data source anymore.
-* Fixer.io has gone to the dark side and requires a sign-up now. You only get 1000 req per month, I don't recommend using this...
-unless you leverage cache... or maybe even store a model of the response data. You would need to create your own model and migration
-as needed. Note that storing data for more then temporary cache might go against data providers user terms.
+* The European Central Bank does not require any user account and is therefore set as the default 'api-source', 
+however the number of available currencies are somewhat limited compared to the other commercial sources (37). 
+In my experience this source is also unpredictable, and might give an empty response. 
+* All the other data providers are commercial and require a user account. They all have a free tier of 1000 requests per month,
+ let's say you theoretically cache results for 60 min and you should be covered with some margin for errors 👍 
+ Coincidentally Cache is enabled per default and set to 60 min. Now in theory one should perhaps make a simple Eloquent Model with 
+the columns: date, from, to, rate or something similar, and then store the historical results. Please note that depending on usage this 
+might go against the user agreements on the commercial data providers. 🤫 🙈
 
 ### Installation
 ```
@@ -37,6 +41,18 @@ You can publish this vendor config file if you would like to make changes to the
 php artisan vendor:publish --provider="danielme85\CConverter\CConverterServiceProvider"
 ```
 
+All config variables can also be changed in your local .env file:
+```
+CC_API_SOURCE=eurocentralbank
+CC_USE_SSL=true
+CC_FIXERIO_ACCESS_KEY=
+CC_OPENEXCHANGE_APP_ID=
+CC_CURRENCYLAYER_ACCESS_KEY=
+CC_ENABLE_LOG=false
+CC_ENABLE_CACHE=true
+CC_CACHE_TIMEOUT=60
+```
+ 
 ### Usage
 There are static class "shortcuts" to convert or get one-time Currency series. 
 ```php
@@ -125,15 +141,14 @@ https://github.com/gerardojbaez/money
 ### Supported functions per API
 Default API is: The European Central Bank
 
-| Config var        | API                           | HTTPS         | Historical    |  Sign-up required |
-| ----------------- | --------------------------    |:------------: | :---------:   |  :--------------: |
-|eurocentralbank    | The European Central Bank     | yes           | yes           |   no              |
-|openexchange       | https://openexchangerates.org | non-free      | non-free      |   yes             |
-|* ~~yahoo~~        | ~~Yahoo Finance~~             | ~~yes~~       | ~~no~~        |   ~~no~~          |
-|currencylayer      | https://currencylayer.com/    | non-free      | yes           |   yes             |
-|fixer              | http://fixer.io/              | yes           | yes           |   yes             |
+| Config var        | API                           | HTTPS         | Historical    |  Sign-up required |   URL                         |
+| ----------------- | --------------------------    |:------------: | :---------:   |  :--------------: |   -----------------------     |
+|eurocentralbank    | The European Central Bank     | yes           | yes           |   no              |   https://sdw-wsrest.ecb.europa.eu/help/  |
+|openexchange       | OpenExchangeRates.com         | non-free      | non-free      |   yes             |   https://openexchangerates.org   |
+|currencylayer      | *CurrencyLayer                 | non-free      | yes           |   yes             |   https://currencylayer.com      |
+|fixer              | *Fixer.io                      | yes           | yes           |   yes             |   https://fixer.io               |
 
-<i>*Yahoo has discontinued their finance data API.</i>
+<i>*CurrencyLayer and Fixer.io is the same company now, and it seems like the services have become one and the same.</i>
 
 ### Disclaimer
 Please take note of the Terms of Use for the different data sources.
