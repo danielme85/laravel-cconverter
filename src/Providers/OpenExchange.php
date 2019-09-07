@@ -23,22 +23,19 @@ class OpenExchange extends BaseProvider implements ProviderInterface
      */
     public function rates(string $currency, string $date): Rates
     {
-        $results = [];
         $rates = $this->getBaseRates($currency, $date);
         if (empty($rates)) {
-            $rates = $this->convert($this->download($date));
-            if ($currency !== 'EUR') {
-                //Set USD base rate
-                $this->setBaseRates($rates->convertBaseRatesToUSD());
-
+            if ($this->settings['openex-use-real-base']) {
+                $rates = $this->convert($this->download($currency, $date));
+            } else {
+                $rates = $this->convert($this->download('USD', $date));
                 if ($currency !== 'USD') {
                     $rates = $rates->convertBaseRateToCurrency($currency);
-                    $this->setBaseRates($rates);
                 }
-            } else {
-                $this->setBaseRates($rates);
             }
+            $this->setBaseRates($rates);
         }
+
 
         return $rates;
     }
@@ -46,34 +43,30 @@ class OpenExchange extends BaseProvider implements ProviderInterface
     /**
      * Get data from openExchange
      *
+     * @param string $currency
+     * @param string $date
+     *
      * @return array
      */
-    private function download($currency, $fromDate = null, $toDate = null)
+    private function download($currency, $date)
     {
         //use test data if running as test
         if ($this->runastest) {
             $results = file_get_contents(dirname(__FILE__) . '/../../tests/openExchangeTestData.json');
         }
         else {
-            //A special case for openExchange free version.
-            if (!$this->settings['openex-use-real-base']) {
-                $base = 'USD';
-            } else {
-                $base = $currency;
-            }
-
             if ($this->settings['use-ssl']) {
                 $url = 'https';
             } else {
                 $url = 'http';
             }
 
-            if (!empty($fromDate) and !empty($toDate)) {
-                $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] . '&start=' . $fromDate . '&end=' . $toDate . '&base=' . $base;
+            if ($date === date('Y-m-d')) {
+                $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] . '&base=' . $currency;
             } else {
-                $url .= '://openexchangerates.org/api/latest.json?app_id=' . $this->settings['openex-app-id'] . '&base=' . $base;
+                $url .= '://openexchangerates.org/api/time-series.json?app_id=' . $this->settings['openex-app-id'] . '&start=' . $date . '&end=' . $date . '&base=' . $currency;
             }
-
+            $this->url = $url;
             $results = $this->connect($url);
         }
 
@@ -86,21 +79,23 @@ class OpenExchange extends BaseProvider implements ProviderInterface
      *
      * @return Rates
      */
-    protected function convert($input, $date = null) : Rates
+    protected function convert($input) : Rates
     {
+        $rates = new Rates();
+        $rates->timestamp = time();
+        $rates->date = $this->date;
+        $rates->base = 'USD';
+        $rates->rates = [];
+        $rates->url = $this->url;
+
+        if ($this->date !== date('Y-m-d')) {
+            $date = $this->date;
+        } else {
+            $date = null;
+        }
+
         $data = json_decode($input, true);
         if (!empty($data)) {
-
-            $time = $data['timestamp'];
-
-            $rates = new Rates();
-            $rates->timestamp = time();
-            $rates->date = date('Y-m-d', $time);
-            $rates->datetime = date('Y-m-d H:i:s', $time);
-            $rates->base = strtoupper($data['base']);
-            $rates->extra = [];
-            $rates->rates = [];
-
             if (!empty($date)) {
                 if (isset($data['rates'][$date]) and is_array($data['rates'][$date])) {
                     foreach ($data['rates'][$date] as $key => $row) {
@@ -116,7 +111,9 @@ class OpenExchange extends BaseProvider implements ProviderInterface
                     Log::warning('No results returned from OpenExchange.');
                 }
             }
-
+        }
+        else {
+            $rates->error = "No data in response from OpenExchange";
         }
 
         return $rates;

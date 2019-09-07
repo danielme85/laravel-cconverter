@@ -29,15 +29,15 @@ class Currency
      *
      */
     public function __construct($api = null, $https = null, $useCache = null, $cacheMin = null, $runastest = false) {
-        if (!$settings = Config::get('CConverter')) {
-            Log::info('The CConverter.php config file was not found.');
+        if (!$settings = Config::get('currencyConverter')) {
+            Log::info('The currencyConverter.php config file was not found.');
         }
         //Override config/settings with constructor variables if present.
         if (isset($api)) {
             $settings['api-source'] = $api;
         }
         if (isset($https)) {
-            $settings['use-https'] = $https;
+            $settings['use-ssl'] = $https;
         }
         if (isset($useCache)) {
             $settings['enable-cache'] = $useCache;
@@ -71,6 +71,21 @@ class Currency
     {
         $rates = $this->getRateModel($base, $date);
 
+        return $rates->toArray();
+    }
+
+    /**
+     * Get currency rates in an array format
+     *
+     * @param null|string $base The base currency (defaults to USD if null/empty).
+     * @param null|string $date The date (defaults to today if null/empty).
+     *
+     * @return array
+     */
+    public function getRateResults($base = null, $date = null) : array
+    {
+        $rates = $this->getRateModel($base, $date);
+
         return $rates->rates;
     }
 
@@ -94,9 +109,11 @@ class Currency
         $this->fromCache = false;
         $api = $this->api;
 
-        if ($this->cacheEnabled === true) {
+        if ($this->cacheEnabled) {
             $cachekey = "cc-$api-$base-$date";
-            if ($rates = Cache::get($cachekey)) {
+
+            $rates = Cache::get($cachekey);
+            if (is_object($rates) and isset($rates->rates)) {
                 $this->fromCache = true;
                 if ($this->logEnabled) {
                     Log::debug("Got currency rates from cache: $cachekey");
@@ -104,7 +121,7 @@ class Currency
             }
             else {
                 $rates = $this->provider->rates($base, $date);
-                if ($rates) {
+                if (!empty($rates->rates)) {
                     if(Cache::add($cachekey, $rates, $this->cacheMinutes) and $this->logEnabled) {
                         Log::debug('Added new currency rates to cache: '.$cachekey.' for '.$this->cacheMinutes.' min.');
                     }
@@ -115,25 +132,11 @@ class Currency
             $rates = $this->provider->rates($base, $date);
         }
 
-        return $rates;
-    }
-
-    /**
-     * Get Rate Series
-     *
-     * @param $base
-     * @param $dateStart
-     * @param $dateEnd
-     * @return bool
-     */
-    public function getRateSeries($base, $dateStart, $dateEnd) {
-        //Check to see if rates is implemented in the provider.
-        if (!method_exists($this->provider, 'rateSeries')) {
-            Log::warning("The provider: $this->api does not support the rateSeries() operation");
-            return false;
+        if (empty($rates->rates)) {
+            Log::warning("$rates->error -> $rates->url");
         }
 
-        return false;
+        return $rates;
     }
 
 
@@ -158,11 +161,11 @@ class Currency
             return $result;
         }
 
-        $rates = $this->getRates($from, $date);
+        $rates = $this->getRateResults($from, $date);
 
         if (!empty($rates)) {
             if (!array_key_exists($to, $rates)) {
-                Log::warning("The currency $to does not exist for the provider: $this->provider->name");
+                Log::warning("The currency $to does not exist for the provider: $this->api");
                 return $result;
             }
             $rate = $rates[$to];
@@ -184,7 +187,7 @@ class Currency
             }
         }
         else {
-            Log::warning("No rates for $from found from provider: $this->provider->name");
+            Log::warning("No rates for $from found from provider: $this->api");
             return $result;
         }
         return $result;
@@ -231,34 +234,14 @@ class Currency
                                  $useCache = null, $cacheMin = null, $runastest = false) : array
     {
         $rates = new self($api, $https, $useCache, $cacheMin, $runastest);
-        return $rates->getRates($base, $date);
-    }
-
-    /**
-     * Get a rate series for given to/from currency and dates
-     *
-     * @param null|string $base
-     * @param null|string $start
-     * @param null|string $end
-     * @param null|bool $https override https setting
-     * @param null|bool $useCache override cache setting
-     * @param null|int $cacheMin override cache setting
-     * @param null|bool $runastest for testing, uses local test data.
-     *
-     * @return array
-     */
-    public static function rateSeries($base, $start, $end, $api = null, $https = null,
-                                      $useCache = null, $cacheMin = null, $runastest = false) : array
-    {
-        $rates = new self($api, $https, $useCache, $cacheMin, $runastest);
-        return $rates->getRateSeries($base, $start, $end);
+        return $rates->getRateResults($base, $date);
     }
 
 
     /**
      * Get the provider model instance
      *
-     * @return Providers\CurrencyLayer|Providers\EuropeanCentralBank|Providers\Fixer|Providers\OpenExchange|Providers\Yahoo
+     * @return Providers\CurrencyLayer|Providers\EuropeanCentralBank|Providers\Fixer|Providers\OpenExchange
      */
     public function provider() {
         return $this->provider;

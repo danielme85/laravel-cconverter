@@ -11,10 +11,11 @@ class Rates
 {
     public $timestamp;
     public $date;
-    public $datetime;
     public $base;
     public $extra;
     public $rates;
+    public $url;
+    public $error = false;
 
     /**
      * Convert rates to new currency

@@ -20,11 +20,17 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
      */
     public function rates(string $currency, string $date = null) : Rates
     {
-        $results = [];
         $rates = $this->getBaseRates($currency, $date);
         if (empty($rates)) {
-            $rates = $this->convert($this->download($currency, $date));
-            $this->setBaseRates($rates);
+            $rates = $this->convert($this->download($date));
+
+            if ($currency !== 'USD') {
+                $rates = $rates->convertBaseRateToCurrency($currency);
+                $this->setBaseRates($rates);
+            }
+            else {
+                $this->setBaseRates($rates);
+            }
         }
 
         return $rates;
@@ -35,12 +41,14 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
      *
      * @return array
      */
-    private function download($currency, $fromDate = null, $toDate = null) {
+    private function download($fromDate = null, $toDate = null) {
         //use test data if running as test
         if ($this->runastest) {
             $response = file_get_contents(dirname(__FILE__). '/../../tests/currencyLayerTestData.json');
         }
         else {
+            $base = 'USD';
+
             if ($this->settings['use-ssl']) {
                 $url = 'https';
             } else {
@@ -48,15 +56,15 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
             }
 
             if (!empty($fromDate) and !empty($toDate)) {
-                $url .= '://apilayer.net/api/timeframe?access_key='.$this->settings['currencylayer-access-key'].'&source='.$currency.'&start_date='.$fromDate.'&end_date='.$toDate;
+                $url .= '://apilayer.net/api/timeframe?access_key='.$this->settings['currencylayer-access-key'].'&source='.$base.'&start_date='.$fromDate.'&end_date='.$toDate;
                 }
             else if (!empty($fromDate)) {
-                $url .= '://apilayer.net/api/historical?access_key=' . $this->settings['currencylayer-access-key'] . '&date=' . $fromDate . '&source=' . $currency;
+                $url .= '://apilayer.net/api/historical?access_key=' . $this->settings['currencylayer-access-key'] . '&date=' . $fromDate . '&source=' . $base;
 
             } else {
-                $url .= '://apilayer.net/api/live?access_key=' . $this->settings['currencylayer-access-key'] . '&source=' . $currency;
+                $url .= '://apilayer.net/api/live?access_key=' . $this->settings['currencylayer-access-key'] . '&source=' . $base;
             }
-
+            $this->url = $url;
             $response = $this->connect($url);
         }
 
@@ -72,22 +80,20 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
      */
     private function convert($input): Rates
     {
+        $rates = new Rates();
+        $rates->timestamp = time();
+        $rates->date = $this->date;
+        $rates->base = 'USD';
+        $rates->rates = [];
+        $this->url = $this->url;
+
         $data = json_decode($input, true);
+
         if (!empty($data)) {
-
-            $time = $data['timestamp'];
-
-            $rates = new Rates();
-            $rates->timestamp = time();
-            $rates->date = date('Y-m-d', $time);
-            $rates->datetime = date('Y-m-d H:i:s', $time);
-            $rates->base = strtoupper($data['source']);
-            $rates->extra = [];
-            $rates->rates = [];
-            $newrates = [];
-
             if (isset($data['success'])) {
                 if ($data['success']) {
+                    $rates->extra['cl_timestamp'] = $data['timestamp'] ?? null;
+                    $newrates = [];
                     if (isset($data['quotes']) and is_array($data['quotes'])) {
                         foreach ($data['quotes'] as $key => $row) {
                             if ($key === "$rates->base$rates->base") {
@@ -95,44 +101,23 @@ class CurrencyLayer extends BaseProvider implements ProviderInterface
                             } else {
                                 $key = str_replace($rates->base, '', $key);
                             }
-                            $newrates[$key] = $row;
+                            $newrates[$key] = round($row, 5);
                         }
                     }
                 }
             }
+            if (isset($data['error'])) {
+                $rates->extra['cl_error'] = $data['error'] ?? null;
+            }
         }
+        else {
+            $rates->error = "No data in response from Currency Layer.";
+        }
+
         if (!empty($newrates)) {
             $rates->rates = $newrates;
         }
 
         return $rates;
-    }
-
-    /**
-     * Convert data from jsonRates Series to standardized format.
-     *
-     * @param array $data
-     * @return array
-     */
-    private function convertFromJsonRatesSeries($data) {
-        $base = $data['source'];
-        $output = array();
-        $output['base'] = $base;
-
-        $output['to'] = $data['start_date'];
-        $output['from'] = $data['end_date'];
-
-        if (isset($data['quotes']) and is_array($data['quotes'])) {
-            foreach ($data['quotes'] as $key => $row) {
-                $key = str_replace($base, '', $key);
-                $output['rates'][$key]['timestamp'] = strtotime($row['utctime']);
-                $output['rates'][$key]['rate'] = $row['quotes'];
-            }
-        }
-        else {
-            Log::warning('No results returned from CurrencyLayer.');
-        }
-
-        return $output;
     }
 }

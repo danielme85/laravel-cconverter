@@ -62,10 +62,12 @@ class EuropeanCentralBank extends BaseProvider implements ProviderInterface
             } else {
                 $url = 'http';
             }
-            if (!empty($date)) {
+            if (empty($date)) {
                 $date = date('Y-m-d');
             }
             $url .= "://sdw-wsrest.ecb.europa.eu/service/data/EXR/D..EUR.SP00.A?startPeriod=$date&endPeriod=$date&detail=dataonly";
+
+            $this->url = $url;
 
             $response = $this->connect($url, [
                 'Accept' => 'application/vnd.sdmx.data+json;version=1.0.0-wd',
@@ -85,56 +87,62 @@ class EuropeanCentralBank extends BaseProvider implements ProviderInterface
      */
     private function convert($input) : Rates
     {
-        $data = json_decode($input, true);
-        $series = end($data['dataSets']);
-        $structure = $data['structure']['dimensions']['series'];
-
-        $time = strtotime($series['validFrom']);
-
         $rates = new Rates();
         $rates->timestamp = time();
-        $rates->date = date('Y-m-d', $time);
-        $rates->datetime = date('Y-m-d H:i:s', $time);
+        $rates->date = $this->date;
         $rates->base = 'EUR';
-        $rates->extra = ['european_central_bank_valid_from' => $series['validFrom']];
         $rates->rates = [];
+        $rates->url = $this->url;
 
-        $newrates = [];
+        if (!empty($input)) {
+            $data = json_decode($input, true);
+            if (!empty($data)) {
+                $series = end($data['dataSets']) ?? null;
+                $structure = $data['structure']['dimensions']['series'] ?? null;
 
-        if (!empty($structure)) {
-            foreach ($structure as $struc) {
-                if ($struc['id'] === 'CURRENCY') {
-                    if (!empty($struc['values'])) {
-                        foreach ($struc['values'] as $label) {
-                            $labels[] = $label['id'];
+                $rates->extra['european_central_bank_valid_from'] = $series['validFrom'] ?? null;
+
+                $newrates = [];
+
+                if (!empty($structure)) {
+                    foreach ($structure as $struc) {
+                        if ($struc['id'] === 'CURRENCY') {
+                            if (!empty($struc['values'])) {
+                                foreach ($struc['values'] as $label) {
+                                    $labels[] = $label['id'];
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
 
-        if (!empty($series['series'])) {
-            foreach ($series['series'] as $row) {
-                $avg = 0;
-                $counter = 0;
-                foreach ($row as $subrow) {
-                    if (!empty($subrow)) {
-                        foreach ($subrow as $value) {
-                            $avg += $value[0];
-                            $counter++;
+                if (!empty($series['series'])) {
+                    foreach ($series['series'] as $row) {
+                        $avg = 0;
+                        $counter = 0;
+                        foreach ($row as $subrow) {
+                            if (!empty($subrow)) {
+                                foreach ($subrow as $value) {
+                                    $avg += $value[0];
+                                    $counter++;
+                                }
+                            }
                         }
+                        $newrates[] = $avg / $counter;
                     }
                 }
-                $newrates[] = $avg/$counter;
+
+                if (!empty($labels) and !empty($newrates)) {
+                    foreach ($labels as $i => $label) {
+                        $rates->rates[$label] = $newrates[$i];
+                    }
+                    //add 1:1 conversion rate from base for testing
+                    $rates->rates['EUR'] = 1;
+                }
             }
         }
-
-        if (!empty($labels) and !empty($newrates)) {
-            foreach ($labels as $i => $label) {
-                $rates->rates[$label] = $newrates[$i];
-            }
-            //add 1:1 conversion rate from base for testing
-            $rates->rates['EUR'] = 1;
+        else {
+            $rates->error = "No data in response from the European Central Bank.";
         }
 
         return $rates;

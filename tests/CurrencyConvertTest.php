@@ -16,6 +16,27 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     }
 
     /**
+     * Define environment setup.
+     *
+     * @param  \Illuminate\Foundation\Application  $app
+     *
+     * @return void
+     */
+    protected function getEnvironmentSetUp($app)
+    {
+        if (file_exists(dirname(__DIR__) . '/.env.testing')) {
+            (\Dotenv\Dotenv::create(dirname(__DIR__), '/.env.testing'))->load();
+        }
+
+        $hash1 = getenv('HASH1') ?? env('HASH1') ?? '';
+        $hash2 = getenv('HASH2') ?? env('HASH2') ?? '';
+        $hash3 = getenv('HASH3') ?? env('HASH3') ?? '';
+        $app['config']->set('currencyConverter.openex-app-id', $hash1);
+        $app['config']->set('currencyConverter.currencylayer-access-key', $hash2);
+        $app['config']->set('currencyConverter.fixer-access-key', $hash3);
+    }
+
+    /**
      * Test of default settings and init
      * @group basics
      *
@@ -24,7 +45,7 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     public function testDefaultApi() {
         $currency = new Currency(null, null, false, null, true);
 
-        $rates = $currency->getRates();
+        $rates = $currency->getRateResults();
         $this->assertNotEmpty($rates);
         $this->assertEquals(1, $rates['USD']);
 
@@ -67,11 +88,14 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     public function testEuroBank()
     {
         $currency = new Currency('eurocentralbank', null, false, null, true);
-        $this->assertNotEmpty($currency->getRates());
+        $this->assertNotEmpty($currency->getRateResults());
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
 
         //Test with live data
+        //The European central bank has an unstable response success rate so we just check the model after the request.
         $currency = new Currency('eurocentralbank');
         $this->assertNotEmpty($currency->getRates());
 
@@ -86,9 +110,18 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     public function testFixer()
     {
         $currency = new Currency('fixer', null, false, null, true);
-        $this->assertNotEmpty($currency->getRates());
+        $this->assertNotEmpty($currency->getRateResults());
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
+        //Live test
+        $currency = new Currency('fixer', false);
+        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertNotEmpty($currency->getRateResults('USD', '2018-01-01'));
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
     }
 
     /**
@@ -100,24 +133,20 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     public function testCurrencyLayer()
     {
         $currency = new Currency('currencylayer', null, false, null, true);
-        $this->assertNotEmpty($currency->getRates());
+        $this->assertNotEmpty($currency->getRateResults());
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
 
-    }
 
-    /**
-     * Test to see if the Currency object can be created with Yahoo Finance.
-     * @group yahoo
-     *
-     * @return void
-     */
-    public function testYahoo()
-    {
-        $currency = new Currency('yahoo', null, false, null, true);
-        $this->assertNotEmpty($currency->getRates());
+        //Live test
+        $currency = new Currency('currencylayer', false);
+        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertNotEmpty($currency->getRateResults('USD', '2018-01-01'));
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
     }
 
     /**
@@ -129,9 +158,17 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     public function testOpenExchange()
     {
         $currency = new Currency('openexchange', null, false, null, true);
-        $this->assertNotEmpty($currency->getRates());
+        $this->assertNotEmpty($currency->getRateResults());
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+
+        //Live test
+        $currency = new Currency('openexchange', false);
+        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
     }
 
     /**
@@ -143,7 +180,35 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     public function testMoneyFormat() {
         $currency = new Currency(null, null, false, null, true);
         $this->assertEquals('$10.00', $currency->convert('USD','USD', 10, 'money'));
-        $this->assertEquals('$199.99', moneyFormat(199.99, 'USD'));
+        $this->assertEquals('$199.99', Currency::money(199.99, 'USD'));
         $this->assertEquals('kr 8,47', $currency->convert('USD','NOK', 1, 'money'));
+    }
+
+    /**
+     * Test the Rate Model
+     * @group ratearray
+     *
+     * @return void
+     */
+    public function testGetRatesArray() {
+        $currency = new Currency(null, null, false, null, true);
+        $array = $currency->getRates();
+        $this->assertArrayHasKey('base', $array);
+        $this->assertArrayHasKey('rates', $array);
+        $this->assertNotEmpty($array['rates']);
+    }
+
+    /**
+     * Test the Rate Model
+     * @group ratemodel
+     *
+     * @return void
+     */
+    public function testGetRateModel() {
+        $currency = new Currency(null, null, false, null, true);
+        $model = $currency->getRateModel();
+        $this->assertObjectHasAttribute('base', $model);
+        $this->assertObjectHasAttribute('rates', $model);
+
     }
 }

@@ -21,7 +21,6 @@ class Fixer extends BaseProvider implements ProviderInterface
      */
     public function rates(string $currency, string $date = null) : Rates
     {
-        $results = [];
         $rates = $this->getBaseRates($currency, $date);
         if (empty($rates)) {
             if ($this->settings['fixer-use-real-base']) {
@@ -68,11 +67,11 @@ class Fixer extends BaseProvider implements ProviderInterface
                 $url = 'http';
             }
             if (!empty($date)) {
-                $url .= "://data.fixer.io/api/$date?base=$currency";
+                $url .= "://data.fixer.io/api/$date?access_key=".$this->settings['fixer-access-key']."&base=$currency";
             } else {
-                $url .= "://data.fixer.io/api/latest?base=$currency";
+                $url .= "://data.fixer.io/api/latest?access_key=".$this->settings['fixer-access-key']."&base=$currency";
             }
-
+            $this->url = $url;
             $response = $this->connect($url);
         }
 
@@ -83,30 +82,33 @@ class Fixer extends BaseProvider implements ProviderInterface
     /**
      * Convert data from fixer.io to standardized format.
      *
-     * @param array $data
-     * @return array
+     * @param string $input
+     * @return Rates
      */
-    private function convert($input) {
-        $data = json_decode($input, true);
-
-        $time = strtotime($data['date']);
-
+    private function convert($input) : Rates
+    {
         $rates = new Rates();
         $rates->timestamp = time();
-        $rates->date = date('Y-m-d', $time);
-        $rates->datetime = date('Y-m-d H:i:s', $time);
+        $rates->date = $this->date;
         $rates->base = 'EUR';
+        $rates->rates = [];
+        $rates->url = $this->url;
+
+        $data = json_decode($input, true);
 
         if (!empty($data)) {
             if (!empty($data['rates'])) {
+                $rates->extra['fixer_date'] = $data['date'] ?? null;
                 foreach ($data['rates'] as $key => $row) {
-                    $newrates[$key] = $row;
+                    $rates->rates[$key] = $row;
                 }
                 //add 1:1 conversion rate from base for testing
-                $newrates[$data['base']] = 1;
+                $rates->rates[$data['base']] = 1;
             }
         }
-        $rates->rates = $newrates;
+        else {
+            $rates->error = "No data in response from Fixer.io";
+        }
 
         return $rates;
     }

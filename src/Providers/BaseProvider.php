@@ -8,18 +8,20 @@
 namespace danielme85\CConverter\Providers;
 
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Log;
 
 class BaseProvider
 {
     public $api;
     public $logEnabled;
 
+    protected $date;
+    protected $currency;
     protected $baseRates;
-    protected $baseRateSeries;
 
     protected $runastest;
     protected $settings;
+
+    protected $url;
 
     /**
      * BaseProvider constructor.
@@ -40,20 +42,18 @@ class BaseProvider
      * @param string $url
      * @param array $headers
      *
-     * @return \Psr\Http\Message\StreamInterface
+     * @return string
      */
     protected function connect($url, $headers = null)
     {
         if (!empty($headers)) {
             $client = new Client(['headers' => $headers]);
-
         }
         else {
             $client = new Client();
-
         }
         $request = $client->get($url);
-        $response = $request->getBody();
+        $response = $request->getBody()->getContents();
 
         return $response;
     }
@@ -84,33 +84,18 @@ class BaseProvider
      * Get rates
      *
      * @param string $currency
-     * @param $date
+     * @param string $date
      *
      * @return Rates|null
      */
-    protected function getBaseRates(string $currency, $date)
+    protected function getBaseRates(string $currency, string $date)
     {
+        $this->currency = $currency;
+        $this->date = $date;
+
         if (isset($this->baseRates[strtoupper($currency)][$date])) {
 
             return $this->baseRates[strtoupper($currency)][$date];
-        }
-
-        return null;
-    }
-
-    /**
-     * Get rate series
-     *
-     * @param string $currency
-     * @param $date
-     *
-     * @return Rates|null
-     */
-    protected function getBaseRateSeries(string $currency)
-    {
-        if (isset($this->baseRates[strtoupper($currency)])) {
-
-            return $this->baseRates[strtoupper($currency)];
         }
 
         return null;
