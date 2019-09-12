@@ -10,14 +10,13 @@
         }
     ],
     "require": {
-        "php": ">=7.2",
-        "illuminate/support": "^6.0",
+        "php": ">=7.1",
+        "illuminate/support": ">=5.4",
         "guzzlehttp/guzzle": "^6.0",
         "gerardojbaez/money": "^0.3"
     },
     "require-dev": {
-        "orchestra/testbench": "^4.0",
-        "kint-php/kint": "^2.2"
+        "orchestra/testbench": "^4.0"
     },
     "autoload": {
         "psr-4": {
