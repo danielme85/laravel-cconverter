@@ -16,7 +16,7 @@
         "gerardojbaez/money": "^0.3"
     },
     "require-dev": {
-        "orchestra/testbench": "^4.0"
+        "orchestra/testbench": ">=3.7"
     },
     "autoload": {
         "psr-4": {
