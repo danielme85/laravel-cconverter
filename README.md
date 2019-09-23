@@ -15,6 +15,7 @@ Version testing and requirements
 | Version        | Tested with   |
 | :----------:   |:-------------:|
 | dev-master     | Laravel 6.0   |
+| v0.3.*         | Laravel 6.0   |
 | v0.2.*         | Laravel 5.6   | 
 | v0.1.*         | Laravel 5.5   | 
 | v0.0.7         | Laravel 5.4   | 
