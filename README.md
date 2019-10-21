@@ -62,7 +62,7 @@ There are static class "shortcuts" to convert or get one-time Currency series.
 $valueNOK = Currency::conv($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2);
 
 //To convert a value based on historical data
-$valueNOK = Currency::conv($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2, $date = '2014-12-24');
+$valueNOK = Currency::conv($from = 'USD', $to = 'NOK', $value = 10, $decimals = 2, $date = '2018-12-24');
 
 //to get an array of all the rates associated to a base currency.
 $rates = Currency::rates(); //defaults to USD
@@ -70,10 +70,8 @@ $rates = Currency::rates(); //defaults to USD
 $rates = Currency::rates('NOK');
 
 //Get historical rates
-$rates = Currency::rates('NOK', '2014-12-24');
+$rates = Currency::rates('NOK', '2018-12-24');
 
-//Get historical rate series
-$rates = Currency::rateSeries('USD', 'NOK', '2016-12-24', ''2016-12-31);
 ```
 
 #### Working with multiple values
@@ -107,7 +105,7 @@ $result = Currency:conv(
     $to = 'NOK', 
     $value = 10, 
     $decimals = 2, 
-    $date = '2014-12-24', 
+    $date = '2018-12-24', 
     $api = 'yahoo', 
     $https = false, 
     $useCache = false, 

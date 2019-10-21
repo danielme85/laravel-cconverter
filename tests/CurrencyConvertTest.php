@@ -4,7 +4,7 @@
  * User: danielme85
  * Date: 8/21/17
  * Time: 9:21 PM
-*/
+ */
 
 use danielme85\CConverter\Currency;
 
@@ -107,6 +107,20 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
         $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
+        //Live test
+        $currency = new Currency('fixer', false);
+        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertNotEmpty($currency->getRateResults('USD', '2019-01-01'));
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
+
+        $this->assertNotEmpty(Currency::rates('USD', '2019-01-01', 'fixer', false, true));
+        $this->assertEquals(1, Currency::conv('USD', 'USD', 1, null, '2019-01-01', 'fixer', false, true));
+        $this->assertEquals(1, Currency::conv('EUR', 'EUR', 1, null, '2019-01-01', 'fixer', false, true));
+
     }
 
     /**
@@ -122,6 +136,20 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
         $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
+        //Live test
+        $currency = new Currency('currencylayer', false);
+        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertNotEmpty($currency->getRateResults('USD', '2019-01-01'));
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
+        $this->assertNotEmpty(Currency::rates('USD', '2019-01-01', 'currencylayer'));
+        $this->assertEquals(1, Currency::conv('USD', 'USD', 1, null, '2019-01-01', 'currencylayer', false, true));
+        $this->assertEquals(1, Currency::conv('EUR', 'EUR', 1, null, '2019-01-01', 'currencylayer', false, true));
+
+
     }
 
     /**
@@ -136,6 +164,17 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
         $this->assertNotEmpty($currency->getRateResults());
         $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
         $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+
+        //Live test
+        $currency = new Currency('openexchange', false);
+        $this->assertNotEmpty($currency->getRateResults());
+        $this->assertEquals(1, $currency->convert('USD', 'USD', 1));
+        $this->assertEquals(1, $currency->convert('EUR', 'EUR', 1));
+        $this->assertEquals(1, $currency->convert('NOK', 'NOK', 1));
+
+        $this->assertEquals(1, Currency::conv('USD', 'USD', 1, null, null, 'openexchange', false, true));
+        $this->assertEquals(1, Currency::conv('EUR', 'EUR', 1, null, null, 'openexchange', false, true));
+
     }
 
     /**
