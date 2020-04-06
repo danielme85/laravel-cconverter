@@ -25,7 +25,7 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
     protected function getEnvironmentSetUp($app)
     {
         if (file_exists(dirname(__DIR__) . '/.env.testing')) {
-            (\Dotenv\Dotenv::create(dirname(__DIR__), '/.env.testing'))->load();
+            (\Dotenv\Dotenv::createMutable(dirname(__DIR__), '/.env.testing'))->load();
         }
 
         $hash1 = getenv('HASH1') ?? env('HASH1') ?? '';
