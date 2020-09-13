@@ -28,9 +28,9 @@ class CurrencyConvertTest extends Orchestra\Testbench\TestCase
             (\Dotenv\Dotenv::createMutable(dirname(__DIR__), '/.env.testing'))->load();
         }
 
-        $hash1 = getenv('HASH1') ?? env('HASH1') ?? '';
-        $hash2 = getenv('HASH2') ?? env('HASH2') ?? '';
-        $hash3 = getenv('HASH3') ?? env('HASH3') ?? '';
+        $hash1 = getenv('HASH1') ?: env('HASH1') ?: '';
+        $hash2 = getenv('HASH2') ?: env('HASH2') ?: '';
+        $hash3 = getenv('HASH3') ?: env('HASH3') ?: '';
         $app['config']->set('currencyConverter.openex-app-id', $hash1);
         $app['config']->set('currencyConverter.currencylayer-access-key', $hash2);
         $app['config']->set('currencyConverter.fixer-access-key', $hash3);
